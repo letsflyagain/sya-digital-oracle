@@ -348,7 +348,7 @@
   },
   "9": {
     "hexagram_number": 9,
-    "binary_code": "111011",
+    "binary_code": "110111",
     "ko": {
       "name": "풍천소축",
       "chinese_name": "風天小畜",
@@ -391,7 +391,7 @@
   },
   "10": {
     "hexagram_number": 10,
-    "binary_code": "110111",
+    "binary_code": "111011",
     "ko": {
       "name": "천택리",
       "chinese_name": "天澤履",
@@ -607,7 +607,7 @@
   },
   "15": {
     "hexagram_number": 15,
-    "binary_code": "001000",
+    "binary_code": "000100",
     "ko": {
       "name": "지산겸",
       "chinese_name": "地山謙",
@@ -650,7 +650,7 @@
   },
   "16": {
     "hexagram_number": 16,
-    "binary_code": "000100",
+    "binary_code": "001000",
     "ko": {
       "name": "뇌지예",
       "chinese_name": "雷地豫",
@@ -693,7 +693,7 @@
   },
   "17": {
     "hexagram_number": 17,
-    "binary_code": "001101",
+    "binary_code": "011001",
     "ko": {
       "name": "택뢰수",
       "chinese_name": "澤雷隨",
@@ -739,7 +739,7 @@
   },
   "18": {
     "hexagram_number": 18,
-    "binary_code": "101100",
+    "binary_code": "100110",
     "ko": {
       "name": "산풍고",
       "chinese_name": "山風蠱",
@@ -1428,16 +1428,16 @@
   },
   "33": {
     "hexagram_number": 33,
-    "binary_code": "110000",
+    "binary_code": "111100",
     "ko": {
-      "name": "천산돈",
+      "name": "천산둔",
       "chinese_name": "天山遯",
-      "gwa_name": "돈(遯)",
+      "gwa_name": "둔(遯)",
       "judgment": {
-        "text": "돈(遯)은 형(亨)하니 소리정(小利貞)하니라.",
+        "text": "둔(遯)은 형(亨)하니 소리정(小利貞)하니라.",
         "comments": "돈은 세력이 불리해질 때 멀리 물러나 피하는 은둔의 때이니 피하는 것 자체가 형통한 길입니다. 작은 일을 조용히 지키고 실속을 차리는 것이 이롭습니다."
       },
-      "tanjun": "돈은 물러나 피하는 것이니 형통하다. 강(剛)이 자리를 당해 당당히 응하나, 소인들이 점차 아래에서 자라나기 때문이다. 때에 맞추어 물러나는 은둔의 도리가 참으로 크도다!",
+      "tanjun": "둔은 물러나 피하는 것이니 형통하다. 강(剛)이 자리를 당해 당당히 응하나, 소인들이 점차 아래에서 자라나기 때문이다. 때에 맞추어 물러나는 은둔의 도리가 참으로 크도다!",
       "sangjun": "하늘 아래에 산이 있는 것이 돈(遯)이니, 군자는 이를 보고, 소인을 멀리하되 미워하지 않고 위엄을 지키며 엄격하게 대한다.",
       "lines": {
         "1": { "text": "초륙은 돈꼬(遯尾)니 여(厲)라 물용유유왕(勿用有攸往)이니라.", "comments": "물러나는데 맨 뒤에 처한 꼬리 격이니 위험합니다. 서둘러 어디론가 나아가 움직이지 말고 자중해야 합니다." },
@@ -1476,7 +1476,7 @@
   },
   "34": {
     "hexagram_number": 34,
-    "binary_code": "000011",
+    "binary_code": "001111",
     "ko": {
       "name": "뇌천대장",
       "chinese_name": "雷天大壯",
@@ -1615,7 +1615,7 @@
   },
   "37": {
     "hexagram_number": 37,
-    "binary_code": "101011",
+    "binary_code": "110101",
     "ko": {
       "name": "풍화가인",
       "chinese_name": "風火家人",
@@ -1659,7 +1659,7 @@
   },
   "38": {
     "hexagram_number": 38,
-    "binary_code": "110101",
+    "binary_code": "101011",
     "ko": {
       "name": "화택규",
       "chinese_name": "火澤睽",
@@ -1707,7 +1707,7 @@
   },
   "39": {
     "hexagram_number": 39,
-    "binary_code": "001010",
+    "binary_code": "010100",
     "ko": {
       "name": "수산건",
       "chinese_name": "水山蹇",
@@ -1751,7 +1751,7 @@
   },
   "40": {
     "hexagram_number": 40,
-    "binary_code": "010100",
+    "binary_code": "001010",
     "ko": {
       "name": "뇌수해",
       "chinese_name": "雷水解",
@@ -1798,7 +1798,7 @@
   },
   "41": {
     "hexagram_number": 41,
-    "binary_code": "000111",
+    "binary_code": "100011",
     "ko": {
       "name": "산택손",
       "chinese_name": "山澤損",
@@ -1846,7 +1846,7 @@
   },
   "42": {
     "hexagram_number": 42,
-    "binary_code": "111000",
+    "binary_code": "110001",
     "ko": {
       "name": "풍뢰익",
       "chinese_name": "風雷益",
@@ -2002,7 +2002,7 @@
   },
   "45": {
     "hexagram_number": 45,
-    "binary_code": "000110",
+    "binary_code": "011000",
     "ko": {
       "name": "택지췌",
       "chinese_name": "澤地萃",
@@ -2056,7 +2056,7 @@
   },
   "46": {
     "hexagram_number": 46,
-    "binary_code": "011000",
+    "binary_code": "000110",
     "ko": {
       "name": "지풍승",
       "chinese_name": "地風升",
@@ -2212,7 +2212,7 @@
   },
   "49": {
     "hexagram_number": 49,
-    "binary_code": "101110",
+    "binary_code": "011101",
     "ko": {
       "name": "택화혁",
       "chinese_name": "澤火革",
@@ -2266,7 +2266,7 @@
   },
   "50": {
     "hexagram_number": 50,
-    "binary_code": "011101",
+    "binary_code": "101110",
     "ko": {
       "name": "화풍정",
       "chinese_name": "火風鼎",
@@ -2428,7 +2428,7 @@
   },
   "53": {
     "hexagram_number": 53,
-    "binary_code": "001011",
+    "binary_code": "110100",
     "ko": {
       "name": "풍산점",
       "chinese_name": "風山漸",
@@ -2482,7 +2482,7 @@
   },
   "54": {
     "hexagram_number": 54,
-    "binary_code": "110100",
+    "binary_code": "001011",
     "ko": {
       "name": "뇌택귀매",
       "chinese_name": "雷澤歸妹",
@@ -2536,7 +2536,7 @@
   },
   "55": {
     "hexagram_number": 55,
-    "binary_code": "101101",
+    "binary_code": "001101",
     "ko": {
       "name": "뇌화풍",
       "chinese_name": "雷火豊",
@@ -2590,7 +2590,7 @@
   },
   "56": {
     "hexagram_number": 56,
-    "binary_code": "101101",
+    "binary_code": "101100",
     "ko": {
       "name": "화산려",
       "chinese_name": "火山旅",
@@ -2644,7 +2644,7 @@
   },
   "57": {
     "hexagram_number": 57,
-    "binary_code": "011011",
+    "binary_code": "110110",
     "ko": {
       "name": "손위풍",
       "chinese_name": "巽爲風",
@@ -2698,7 +2698,7 @@
   },
   "58": {
     "hexagram_number": 58,
-    "binary_code": "110110",
+    "binary_code": "011011",
     "ko": {
       "name": "태위택",
       "chinese_name": "兌爲澤",
@@ -2743,7 +2743,7 @@
   },
   "59": {
     "hexagram_number": 59,
-    "binary_code": "011001",
+    "binary_code": "110010",
     "ko": {
       "name": "풍수환",
       "chinese_name": "風水渙",
@@ -2791,7 +2791,7 @@
   },
   "60": {
     "hexagram_number": 60,
-    "binary_code": "100110",
+    "binary_code": "010011",
     "ko": {
       "name": "수택절",
       "chinese_name": "水澤節",
@@ -2935,7 +2935,7 @@
   },
   "63": {
     "hexagram_number": 63,
-    "binary_code": "101010",
+    "binary_code": "010101",
     "ko": {
       "name": "수화기제",
       "chinese_name": "水火旣濟",
@@ -2983,7 +2983,7 @@
   },
   "64": {
     "hexagram_number": 64,
-    "binary_code": "010101",
+    "binary_code": "101010",
     "ko": {
       "name": "화수미제",
       "chinese_name": "火水未濟",
