@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { HelpCircle, RefreshCw, X } from "lucide-react";
 import ichingData from "../data/i-ching.json";
+import InfoButtons from "./components/InfoButtons";
+import { useLanguage } from "./context/LanguageContext";
 
 interface HexagramDetail {
   name: string;
@@ -116,7 +118,7 @@ const renderHexagramHeader = (hex: HexagramDetail, noBoldAll = false) => {
   );
 };
 
-const renderLinesSection = (hex: HexagramDetail, highlightLineKeys: string[], boldLineKeys: string[], asAccordion: boolean, defaultOpen = false, noBoldAll = false, lang: "KO" | "EN" = "KO") => {
+const renderLinesSection = (hex: HexagramDetail, highlightLineKeys: string[], boldLineKeys: string[], asAccordion: boolean, defaultOpen = false, noBoldAll = false, lang: "ko" | "en" = "ko") => {
   const lineKeys = Object.keys(hex.lines).sort((a, b) => Number(a) - Number(b));
   
   const content = (
@@ -154,7 +156,7 @@ const renderLinesSection = (hex: HexagramDetail, highlightLineKeys: string[], bo
 
   if (asAccordion) {
     return (
-      <Accordion title={lang === "KO" ? "효사 (Lines)" : "Lines"} defaultOpen={defaultOpen}>
+      <Accordion title={lang === "ko" ? "효사 (Lines)" : "Lines"} defaultOpen={defaultOpen}>
         {content}
       </Accordion>
     );
@@ -162,13 +164,13 @@ const renderLinesSection = (hex: HexagramDetail, highlightLineKeys: string[], bo
 
   return (
     <div className="space-y-2 my-4">
-      <h4 className="text-xs text-slate-400 font-semibold">{lang === "KO" ? "효사 (Lines)" : "Lines"}</h4>
+      <h4 className="text-xs text-slate-400 font-semibold">{lang === "ko" ? "효사 (Lines)" : "Lines"}</h4>
       {content}
     </div>
   );
 };
 
-const renderTraditionalTab = (lines: number[], currentLang: "KO" | "EN", initMessage: string, primaryHex: HexagramData | null, changedHex: HexagramData | null) => {
+const renderTraditionalTab = (lines: number[], currentLang: "ko" | "en", initMessage: string, primaryHex: HexagramData | null, changedHex: HexagramData | null) => {
   if (lines.length === 0 || !primaryHex) {
     return (
       <div className="text-center text-slate-400 py-8 italic whitespace-pre-line">
@@ -178,8 +180,8 @@ const renderTraditionalTab = (lines: number[], currentLang: "KO" | "EN", initMes
   }
 
   // Find hexagrams
-  const pHex = currentLang === "KO" ? primaryHex.ko : primaryHex.en;
-  const cHex = changedHex ? (currentLang === "KO" ? changedHex.ko : changedHex.en) : null;
+  const pHex = currentLang === "ko" ? primaryHex.ko : primaryHex.en;
+  const cHex = changedHex ? (currentLang === "ko" ? changedHex.ko : changedHex.en) : null;
 
   // Determine moving lines and static lines (0-based indices)
   const movingLineIndices: number[] = [];
@@ -193,7 +195,7 @@ const renderTraditionalTab = (lines: number[], currentLang: "KO" | "EN", initMes
   });
 
   const movingCount = movingLineIndices.length;
-  const trans = originalTabTranslations[currentLang];
+  const trans = originalTabTranslations[currentLang === "ko" ? "KO" : "EN"];
 
   switch (movingCount) {
     case 0: {
@@ -406,8 +408,8 @@ interface Translation {
   resultGeneratedOriginal: string;
 }
 
-const translations: Record<"KO" | "EN", Translation> = {
-  KO: {
+const translations: Record<"ko" | "en", Translation> = {
+  ko: {
     headerTitle: "시야(SYA)",
     langButton: "EN",
     inputLabel: "당신 앞의 문제",
@@ -437,7 +439,7 @@ const translations: Record<"KO" | "EN", Translation> = {
     resultGeneratedAi: "🔮 [AI 현대적 해석]\n본괘와 지괘의 흐름을 보아, 현재 당신이 마주한 상황은 중대한 변화의 기로에 있습니다. AI 분석 결과, 내면의 균형을 유지하고 조급함을 버린다면 조만간 훌륭한 해답을 얻게 될 것입니다. 흐름에 순응하며 성실히 임하십시오.",
     resultGeneratedOriginal: "📜 [주역 괘 원문 해설]\n本卦(본괘) 및 變爻(변효) 분석 결과:\n乾爲天 (건위천) - 天行健 君子以 自强不息\n하늘의 운행이 굳건하니, 군자는 이를 본받아 스스로 힘쓰고 쉬지 아니한다. 변화하는 기운 속에서 바른 길을 고수함이 이롭습니다.",
   },
-  EN: {
+  en: {
     headerTitle: "SYA",
     langButton: "KO",
     inputLabel: "Question in front of you",
@@ -450,7 +452,7 @@ const translations: Record<"KO" | "EN", Translation> = {
     resultLabel: "Fortune-telling interpretation",
     detailBtn: "Detailed interpretation of the answer with AI",
     introCTA: "Tap to enter",
-    introTitle: "SYA: See Your Answer",
+    introTitle: "시야(視野), See Your Answer(SYA)",
     introP1: "When your vision is blocked by life's problems,",
     introP2: "We reveal the answer.",
     introP3: "Oriental wisdom interpreted by AI,",
@@ -475,7 +477,34 @@ interface SlotState {
 }
 
 export default function Home() {
-  const [currentLang, setCurrentLang] = useState<"KO" | "EN">("KO");
+  const { language, toggleLanguage } = useLanguage();
+  const rouletteRef = useRef<HTMLDivElement>(null); // Ref for roulette
+  const hexagramRef = useRef<HTMLDivElement>(null); // Ref for results
+
+  const scrollToRoulette = () => {
+    if (!rouletteRef.current) return;
+    const headerHeight = 80;
+    const elementPosition = rouletteRef.current.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - headerHeight;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth'
+    });
+  };
+
+  const scrollToHexagrams = () => {
+    if (!hexagramRef.current) return;
+    const headerHeight = 80;
+    const elementPosition = hexagramRef.current.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - headerHeight;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth'
+    });
+  };
+
   const [activeTab, setActiveTab] = useState<"ai" | "original">("ai");
   const [oracleInput, setOracleInput] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -521,6 +550,20 @@ export default function Home() {
     }
   }, [splashVisible]);
 
+  // Auto-scroll when generating starts
+  useEffect(() => {
+    if (isGenerating) {
+      setTimeout(scrollToRoulette, 100);
+    }
+  }, [isGenerating]);
+
+  // Auto-scroll when hexagrams are generated
+  useEffect(() => {
+    if (isGenerated) {
+      setTimeout(scrollToHexagrams, 100);
+    }
+  }, [isGenerated]);
+
   const handleSplashClick = () => {
     if (screenStage === "intro") {
       setScreenStage("main");
@@ -534,6 +577,7 @@ export default function Home() {
 
   const handleGenerate = async () => {
     if (isGenerating) return;
+
     setIsGenerating(true);
     setActiveTab("ai");
     setLastLineIndex(0);
@@ -614,15 +658,15 @@ export default function Home() {
     setPrimaryHex(pHex);
     setChangedHex(cHex);
 
-    const t = translations[currentLang];
+    const t = translations[language];
     
     if (pHex) {
-      const detail = currentLang === "KO" ? pHex.ko : pHex.en;
+      const detail = language === "ko" ? pHex.ko : pHex.en;
       setPrimaryHexName(`${detail.name}\n${detail.chinese_name}`);
     }
     
     if (cHex) {
-      const detail = currentLang === "KO" ? cHex.ko : cHex.en;
+      const detail = language === "ko" ? cHex.ko : cHex.en;
       setChangedHexName(`${detail.name}\n${detail.chinese_name}`);
     }
 
@@ -669,7 +713,7 @@ export default function Home() {
     return { pType, cType, symbol, pColor };
   };
 
-  const t = translations[currentLang];
+  const t = translations[language];
 
   const getRouletteLabel = () => {
     if (isGenerating && lastLineIndex !== -1) {
@@ -697,6 +741,7 @@ export default function Home() {
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeGeunIKF47zPgIq3O_t93yoig2f2m3r9ixJKzfzfVcyaIuhrfaaHV1n_LWALHcpQ7_Qn2qMhDAqKYyWWTP2L_nAEOUyn4X8AStMWrOJjkgYr8_dgTnZKpAXWBMw9r6Ok2VUC7VSe3AiC4I7Z9Pupa5XRbgse0By6DkK8crdmgbiaKlFyddpdIteuzQohBehWXDMgO_rqP2yJ0zt5nr9747EWUHnmHM5QdrjGsw7g6Xv4EnDDQNGo-qw6KenzqfOLxZLc"
                 width={320}
                 height={320}
+                priority={true}
               />
             </div>
             <div className="text-center space-y-4 z-10 px-4">
@@ -716,7 +761,7 @@ export default function Home() {
                   {t.introP3}
                 </p>
                 <p className="font-label-md text-emerald-400 tracking-widest text-[14px] leading-relaxed font-bold">
-                  <span className="bg-emerald-400/20 px-2 py-0.5 rounded">AI 주역</span>
+                  <span className="bg-emerald-400/20 px-2 py-0.5 rounded">{language === 'ko' ? 'AI 주역' : 'AI I-CHING'}</span>
                 </p>
               </div>
 
@@ -727,7 +772,7 @@ export default function Home() {
                 </p>
                 <p className="font-label-md text-emerald-400 tracking-widest text-[16px] leading-relaxed font-bold">
                   <span className="">{t.introP3}</span>{" "}
-                  <span className="bg-emerald-400/20 px-2 py-1 rounded">AI 주역</span>
+                  <span className="bg-emerald-400/20 px-2 py-1 rounded">{language === 'ko' ? 'AI 주역' : 'AI I-CHING'}</span>
                 </p>
               </div>
             </div>
@@ -771,12 +816,13 @@ export default function Home() {
               className="px-3 py-1 rounded-full border-2 border-white/30 text-xs font-label-md text-white hover:bg-white/10 transition-colors cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
-                setCurrentLang((prev) => (prev === "KO" ? "EN" : "KO"));
+                toggleLanguage();
               }}
             >
               {t.langButton}
             </button>
           </header>
+          <InfoButtons currentLang={language.toUpperCase() as "KO" | "EN"} />
 
           <main className="flex-1 px-6 py-8 space-y-10 pb-32">
             {/* Input Section */}
@@ -822,7 +868,7 @@ export default function Home() {
 
             {/* Roulette Section */}
             {isGenerating && (
-              <div className="glass-panel rounded-2xl p-6 animate-pulse-subtle" id="roulette-frame">
+              <div ref={rouletteRef} className="glass-panel rounded-2xl p-6 animate-pulse-subtle" id="roulette-frame">
                 <div className="flex flex-col items-center gap-4">
                   <span className="font-label-md text-emerald-400 text-sm uppercase tracking-widest font-bold">
                     {getRouletteLabel()}
@@ -876,7 +922,7 @@ export default function Home() {
             )}
 
             {/* Hexagram Section */}
-            <div className="grid grid-cols-2 gap-2" id="hexagram-container">
+            <div ref={hexagramRef} className="grid grid-cols-2 gap-2" id="hexagram-container">
               {/* Primary Hexagram Frame */}
               <div
                 className={`glass-panel rounded-xl p-4 md:p-6 flex flex-col items-center transition-all duration-700 ${
@@ -1003,7 +1049,7 @@ export default function Home() {
                       {!aiResult ? t.resultInitAi : aiResult}
                     </div>
                   ) : (
-                    renderTraditionalTab(isGenerating ? [] : lines, currentLang, t.resultInitOriginal, isGenerating ? null : primaryHex, isGenerating ? null : changedHex)
+                    renderTraditionalTab(isGenerating ? [] : lines, language, t.resultInitOriginal, isGenerating ? null : primaryHex, isGenerating ? null : changedHex)
                   )}
                 </div>
               </div>
