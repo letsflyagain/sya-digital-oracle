@@ -3,9 +3,30 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { HelpCircle, RefreshCw, X } from "lucide-react";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import pdfMake from "pdfmake/build/pdfmake";
+import { TDocumentDefinitions } from "pdfmake/interfaces";
+import pdfFonts from "pdfmake/build/vfs_fonts";
 import ichingData from "../data/i-ching.json";
+
 import InfoButtons from "./components/InfoButtons";
 import { useLanguage } from "./context/LanguageContext";
+
+// Register fonts
+(pdfMake as any).vfs = pdfFonts;
+
+const getZhuXiRules = (movingLinesCount: number, currentLang: "ko" | "en") => {
+  const rules: Record<number, string> = {
+    0: currentLang === 'ko' ? "분석 무게중심: 본괘 100%. 상황 정체, 본괘의 전체 괘사와 대운을 중심에 두고 풀이하십시오." : "Focus: 100% Original Hexagram. Situation is stagnant; interpret the overall Judgment and flow.",
+    1: currentLang === 'ko' ? "분석 무게중심: 본괘 괘사 30% + 해당하는 1개 동효 70%. 이 1개 효사의 경고와 조언을 핵심 열쇠로 하여 행동 지침을 제시하십시오." : "Focus: 30% Original Judgment + 70% the specific moving line. The line's warning/advice is key.",
+    2: currentLang === 'ko' ? "분석 무게중심: 본괘 괘사 20% + 아랫쪽 동효 50% + 윗쪽 동효 30%. 아랫쪽 동효가 1순위 핵심 열쇠, 윗쪽은 2순위 보완 조언입니다." : "Focus: 20% Original Judgment + 50% lower moving line (key) + 30% upper line (supplementary).",
+    3: currentLang === 'ko' ? "분석 무게중심: 본괘 50% + 지괘 50%. 3개 동효 중 '가운데 위치한 효사'를 핵심 축으로 삼아 현재 대처 방안을 도출하고 지괘 괘사로 결론을 맺으십시오." : "Focus: 50% Original + 50% Changed. Use the middle moving line as the pivot to derive advice, conclude with Changed Judgment.",
+    4: currentLang === 'ko' ? "분석 무게중심: 지괘 괘사 70% + 지괘의 미변효 20% + 본괘 10%. 미래(지괘)가 주(主)이며, 지괘의 2개 미변효를 핵심 조언으로 삼으십시오." : "Focus: 70% Changed Judgment + 20% Changed static lines + 10% Original. Future (Changed) dominates.",
+    5: currentLang === 'ko' ? "분석 무게중심: 지괘 괘사 80% + 지괘의 미변효 15% + 본괘 5%. 지괘 괘사를 중심으로, 단 1개의 지괘 미변효를 마지막 실천 조언으로 강조하십시오." : "Focus: 80% Changed Judgment + 15% Changed static line + 5% Original. Changed Judgment is key.",
+    6: currentLang === 'ko' ? "분석 무게중심: 지괘 괘사 90% + (특수 시) 특수 효사 10%. 환골탈태의 시기이므로 지괘 전체 괘사와 운의 흐름을 강력하게 이끌어 주십시오. 111111/000000일 경우만 마지막 7번째 효사를 활용하십시오." : "Focus: 90% Changed Judgment + 10% special line. A time of transformation; lead with the Changed Hexagram's flow.",
+  };
+  return rules[movingLinesCount] || "";
+};
 
 interface HexagramDetail {
   name: string;
@@ -170,20 +191,28 @@ const renderLinesSection = (hex: HexagramDetail, highlightLineKeys: string[], bo
   );
 };
 
-const renderTraditionalTab = (lines: number[], currentLang: "ko" | "en", initMessage: string, primaryHex: HexagramData | null, changedHex: HexagramData | null) => {
+const renderTraditionalTab = (
+  lines: number[], 
+  currentLang: "ko" | "en", 
+  initMessage: string, 
+  primaryHex: HexagramData | null, 
+  changedHex: HexagramData | null
+): { jsx: React.ReactNode; text: string } => {
   if (lines.length === 0 || !primaryHex) {
-    return (
-      <div className="text-center text-slate-400 py-8 italic whitespace-pre-line">
-        {initMessage}
-      </div>
-    );
+    return {
+      jsx: (
+        <div className="text-center text-slate-400 py-8 italic whitespace-pre-line">
+          {initMessage}
+        </div>
+      ),
+      text: ""
+    };
   }
 
-  // Find hexagrams
   const pHex = currentLang === "ko" ? primaryHex.ko : primaryHex.en;
   const cHex = changedHex ? (currentLang === "ko" ? changedHex.ko : changedHex.en) : null;
+  const isKo = currentLang === 'ko';
 
-  // Determine moving lines and static lines (0-based indices)
   const movingLineIndices: number[] = [];
   const staticLineIndices: number[] = [];
   lines.forEach((sum, idx) => {
@@ -195,11 +224,16 @@ const renderTraditionalTab = (lines: number[], currentLang: "ko" | "en", initMes
   });
 
   const movingCount = movingLineIndices.length;
-  const trans = originalTabTranslations[currentLang === "ko" ? "KO" : "EN"];
+  const trans = originalTabTranslations[isKo ? "KO" : "EN"];
+  const sanitize = (text: string) => isKo ? text : text.replace(/[\u4e00-\u9fa5]/g, '').trim();
+
+  let caseText = "";
+  let jsx: React.ReactNode = null;
 
   switch (movingCount) {
-    case 0: {
-      return (
+    case 0:
+      caseText = `${isKo ? "[본괘]" : "[Primary Hexagram]"}\n${sanitize(pHex.name)} ${pHex.chinese_name || ''}\n${trans.judgment} ${pHex.judgment.text}\n${trans.tanjun} ${pHex.tanjun}\n${trans.sangjun} ${pHex.sangjun}\n${trans.lines}\n${Object.keys(pHex.lines || {}).sort((a,b)=>Number(a)-Number(b)).map(k => `${k}. ${pHex.lines[k].text}\n   (${pHex.lines[k].comments})`).join('\n')}`;
+      jsx = (
         <div className="space-y-4">
           {renderHexagramHeader(pHex)}
           {renderSection(trans.tanjun, pHex.tanjun, false)}
@@ -207,43 +241,44 @@ const renderTraditionalTab = (lines: number[], currentLang: "ko" | "en", initMes
           {renderLinesSection(pHex, [], [], false, false, false, currentLang)}
         </div>
       );
-    }
-    case 1: {
-      const movingKey = (movingLineIndices[0] + 1).toString();
-      return (
+      break;
+    case 1:
+      caseText = `${isKo ? "[본괘]" : "[Primary Hexagram]"}\n${sanitize(pHex.name)} ${pHex.chinese_name || ''}\n${trans.judgment} ${pHex.judgment.text}\n${trans.tanjun} ${pHex.tanjun}\n${trans.sangjun} ${pHex.sangjun}\n${trans.lines}\n${Object.keys(pHex.lines || {}).sort((a,b)=>Number(a)-Number(b)).map(k => `${Number(k)-1 === movingLineIndices[0] ? (isKo ? "[★ 핵심 조언] " : "[★ Key Advice] ") : ""}${k}. ${pHex.lines[k].text}\n   (${pHex.lines[k].comments})`).join('\n')}`;
+      jsx = (
         <div className="space-y-4">
           {renderHexagramHeader(pHex)}
           {renderSection(trans.tanjun, pHex.tanjun, false)}
           {renderSection(trans.sangjun, pHex.sangjun, false)}
-          {renderLinesSection(pHex, [movingKey], [movingKey], false, false, false, currentLang)}
+          {renderLinesSection(pHex, [(movingLineIndices[0]+1).toString()], [(movingLineIndices[0]+1).toString()], false, false, false, currentLang)}
         </div>
       );
-    }
-    case 2: {
-      const lowerKey = (movingLineIndices[0] + 1).toString();
-      const upperKey = (movingLineIndices[1] + 1).toString();
-      return (
+      break;
+    case 2:
+      caseText = `${isKo ? "[본괘]" : "[Primary Hexagram]"}\n${sanitize(pHex.name)} ${pHex.chinese_name || ''}\n${trans.judgment} ${pHex.judgment.text}\n${trans.tanjun} ${pHex.tanjun}\n${trans.sangjun} ${pHex.sangjun}\n${trans.lines}\n${Object.keys(pHex.lines || {}).sort((a,b)=>Number(a)-Number(b)).map(k => {
+        const idx = Number(k)-1;
+        const mark = idx === movingLineIndices[0] ? (isKo ? "[★ 핵심 조언] " : "[★ Key Advice] ") : (idx === movingLineIndices[1] ? (isKo ? "[★ 보완 조언] " : "[★ Supplementary Advice] ") : "");
+        return `${mark}${k}. ${pHex.lines[k].text}\n   (${pHex.lines[k].comments})`;
+      }).join('\n')}`;
+      jsx = (
         <div className="space-y-4">
           {renderHexagramHeader(pHex)}
           {renderSection(trans.tanjun, pHex.tanjun, false)}
           {renderSection(trans.sangjun, pHex.sangjun, false)}
-          {renderLinesSection(pHex, [lowerKey, upperKey], [lowerKey], false, false, false, currentLang)}
+          {renderLinesSection(pHex, [(movingLineIndices[0]+1).toString(), (movingLineIndices[1]+1).toString()], [(movingLineIndices[0]+1).toString()], false, false, false, currentLang)}
         </div>
       );
-    }
-    case 3: {
-      if (!cHex) return null;
-      const key1 = (movingLineIndices[0] + 1).toString();
-      const key2 = (movingLineIndices[1] + 1).toString(); // Middle
-      const key3 = (movingLineIndices[2] + 1).toString();
-
-      return (
+      break;
+    case 3:
+      caseText = `${trans.threeLinesChanging}\n\n${isKo ? "[본괘]" : "[Primary Hexagram]"}\n${sanitize(pHex.name)} ${pHex.chinese_name || ''}\n${trans.judgment} ${pHex.judgment.text}\n${trans.tanjun} ${pHex.tanjun}\n${trans.sangjun} ${pHex.sangjun}\n${trans.lines}\n${Object.keys(pHex.lines || {}).sort((a,b)=>Number(a)-Number(b)).map(k => {
+        const idx = Number(k)-1;
+        const mark = idx === movingLineIndices[1] ? (isKo ? "[★ 핵심 조언] " : "[★ Key Advice] ") : (movingLineIndices.includes(idx) ? (isKo ? "[★ 변화 효사] " : "[★ Changing Line] ") : "");
+        return `${mark}${k}. ${pHex.lines[k].text}\n   (${pHex.lines[k].comments})`;
+      }).join('\n')}\n\n${isKo ? "[지괘]" : "[Changed Hexagram]"}\n${sanitize(cHex!.name)} ${cHex!.chinese_name || ''}\n${trans.judgment} ${cHex!.judgment.text}\n${trans.tanjun} ${cHex!.tanjun}\n${trans.sangjun} ${cHex!.sangjun}\n${trans.lines}\n${Object.keys(cHex!.lines || {}).sort((a,b)=>Number(a)-Number(b)).map(k => `${k}. ${cHex!.lines[k].text}\n   (${cHex!.lines[k].comments})`).join('\n')}`;
+      jsx = (
         <div className="space-y-6">
           <div className="text-sm font-bold text-emerald-400 text-center py-2 bg-emerald-400/10 rounded-lg border border-emerald-400/20">
             {trans.threeLinesChanging}
           </div>
-
-          {/* 본괘 */}
           <div className="space-y-4 pt-2">
             <h4 className="text-sm font-bold text-emerald-400 uppercase tracking-wider border-l-4 border-emerald-400 pl-2">
               {trans.primaryTitle}
@@ -251,42 +286,38 @@ const renderTraditionalTab = (lines: number[], currentLang: "ko" | "en", initMes
             {renderHexagramHeader(pHex)}
             {renderSection(trans.tanjun, pHex.tanjun, true)}
             {renderSection(trans.sangjun, pHex.sangjun, true)}
-            {renderLinesSection(pHex, [key1, key2, key3], [key2], false, false, false, currentLang)}
+            {renderLinesSection(pHex, movingLineIndices.map(i => (i+1).toString()), [(movingLineIndices[1]+1).toString()], false, false, false, currentLang)}
           </div>
-
-          {/* 구분선 */}
           <hr className="border-white/10 my-6" />
-
-          {/* 지괘 */}
           <div className="space-y-4">
             <h4 className="text-sm font-bold text-cyan-400 uppercase tracking-wider border-l-4 border-cyan-400 pl-2">
               {trans.changedTitle}
             </h4>
-            {renderHexagramHeader(cHex)}
-            {renderSection(trans.tanjun, cHex.tanjun, true, false)}
-            {renderSection(trans.sangjun, cHex.sangjun, true, false)}
-            {renderLinesSection(cHex, [], [], true, false, false, currentLang)}
+            {renderHexagramHeader(cHex!)}
+            {renderSection(trans.tanjun, cHex!.tanjun, true, false)}
+            {renderSection(trans.sangjun, cHex!.sangjun, true, false)}
+            {renderLinesSection(cHex!, [], [], true, false, false, currentLang)}
           </div>
         </div>
       );
-    }
-    case 4: {
-      if (!cHex) return null;
-      const staticKey1 = (staticLineIndices[0] + 1).toString();
-      const staticKey2 = (staticLineIndices[1] + 1).toString();
-
-      return (
+      break;
+    case 4:
+      caseText = `${isKo ? "[지괘]" : "[Changed Hexagram]"}\n${sanitize(cHex!.name)} ${cHex!.chinese_name || ''}\n${trans.judgment} ${cHex!.judgment.text}\n${trans.tanjun} ${cHex!.tanjun}\n${trans.sangjun} ${cHex!.sangjun}\n${trans.lines}\n${Object.keys(cHex!.lines || {}).sort((a,b)=>Number(a)-Number(b)).map(k => {
+        const idx = Number(k)-1;
+        const mark = staticLineIndices.includes(idx) ? (isKo ? "[★ 핵심 조언] " : "[★ Key Advice] ") : "";
+        return `${mark}${k}. ${cHex!.lines[k].text}\n   (${cHex!.lines[k].comments})`;
+      }).join('\n')}\n\n${isKo ? "--- 과거의 상태/원인 ---\n" : "--- Past Status/Cause ---\n"}\n${isKo ? "[본괘]" : "[Primary Hexagram]"}\n${sanitize(pHex.name)} ${pHex.chinese_name || ''}\n${trans.judgment} ${pHex.judgment.text}\n${trans.tanjun} ${pHex.tanjun}\n${trans.sangjun} ${pHex.sangjun}\n${trans.lines}\n${Object.keys(pHex.lines || {}).sort((a,b)=>Number(a)-Number(b)).map(k => `${k}. ${pHex.lines[k].text}\n   (${pHex.lines[k].comments})`).join('\n')}`;
+      jsx = (
         <div className="space-y-6">
           <div className="space-y-4">
             <h4 className="text-sm font-bold text-cyan-400 uppercase tracking-wider border-l-4 border-cyan-400 pl-2">
               {trans.changedTitle}
             </h4>
-            {renderHexagramHeader(cHex)}
-            {renderSection(trans.tanjun, cHex.tanjun, false)}
-            {renderSection(trans.sangjun, cHex.sangjun, false)}
-            {renderLinesSection(cHex, [staticKey1, staticKey2], [staticKey1, staticKey2], false, false, false, currentLang)}
+            {renderHexagramHeader(cHex!)}
+            {renderSection(trans.tanjun, cHex!.tanjun, false)}
+            {renderSection(trans.sangjun, cHex!.sangjun, false)}
+            {renderLinesSection(cHex!, staticLineIndices.map(i => (i+1).toString()), staticLineIndices.map(i => (i+1).toString()), false, false, false, currentLang)}
           </div>
-
           <div className="relative flex py-4 items-center">
             <div className="flex-grow border-t border-white/10"></div>
             <span className="flex-shrink mx-4 text-xs text-slate-400 font-medium tracking-wider">
@@ -294,7 +325,6 @@ const renderTraditionalTab = (lines: number[], currentLang: "ko" | "en", initMes
             </span>
             <div className="flex-grow border-t border-white/10"></div>
           </div>
-
           <div className="space-y-4 opacity-80">
             {renderHexagramHeader(pHex, true)}
             {renderSection(trans.tanjun, pHex.tanjun, false, false)}
@@ -303,23 +333,24 @@ const renderTraditionalTab = (lines: number[], currentLang: "ko" | "en", initMes
           </div>
         </div>
       );
-    }
-    case 5: {
-      if (!cHex) return null;
-      const staticKey = (staticLineIndices[0] + 1).toString();
-
-      return (
+      break;
+    case 5:
+      caseText = `${isKo ? "[지괘]" : "[Changed Hexagram]"}\n${sanitize(cHex!.name)} ${cHex!.chinese_name || ''}\n${trans.judgment} ${cHex!.judgment.text}\n${trans.tanjun} ${cHex!.tanjun}\n${trans.sangjun} ${cHex!.sangjun}\n${trans.lines}\n${Object.keys(cHex!.lines || {}).sort((a,b)=>Number(a)-Number(b)).map(k => {
+        const idx = Number(k)-1;
+        const mark = idx === staticLineIndices[0] ? (isKo ? "[★ 핵심 조언] " : "[★ Key Advice] ") : "";
+        return `${mark}${k}. ${cHex!.lines[k].text}\n   (${cHex!.lines[k].comments})`;
+      }).join('\n')}\n\n${isKo ? "--- 과거의 상태/원인 ---\n" : "--- Past Status/Cause ---\n"}\n${isKo ? "[본괘]" : "[Primary Hexagram]"}\n${sanitize(pHex.name)} ${pHex.chinese_name || ''}\n${trans.judgment} ${pHex.judgment.text}\n${trans.tanjun} ${pHex.tanjun}\n${trans.sangjun} ${pHex.sangjun}\n${trans.lines}\n${Object.keys(pHex.lines || {}).sort((a,b)=>Number(a)-Number(b)).map(k => `${k}. ${pHex.lines[k].text}\n   (${pHex.lines[k].comments})`).join('\n')}`;
+      jsx = (
         <div className="space-y-6">
           <div className="space-y-4">
             <h4 className="text-sm font-bold text-cyan-400 uppercase tracking-wider border-l-4 border-cyan-400 pl-2">
               {trans.changedTitle}
             </h4>
-            {renderHexagramHeader(cHex)}
-            {renderSection(trans.tanjun, cHex.tanjun, false)}
-            {renderSection(trans.sangjun, cHex.sangjun, false)}
-            {renderLinesSection(cHex, [staticKey], [staticKey], false, false, false, currentLang)}
+            {renderHexagramHeader(cHex!)}
+            {renderSection(trans.tanjun, cHex!.tanjun, false)}
+            {renderSection(trans.sangjun, cHex!.sangjun, false)}
+            {renderLinesSection(cHex!, [(staticLineIndices[0]+1).toString()], [(staticLineIndices[0]+1).toString()], false, false, false, currentLang)}
           </div>
-
           <div className="relative flex py-4 items-center">
             <div className="flex-grow border-t border-white/10"></div>
             <span className="flex-shrink mx-4 text-xs text-slate-400 font-medium tracking-wider">
@@ -327,7 +358,6 @@ const renderTraditionalTab = (lines: number[], currentLang: "ko" | "en", initMes
             </span>
             <div className="flex-grow border-t border-white/10"></div>
           </div>
-
           <div className="space-y-4 opacity-80">
             {renderHexagramHeader(pHex, true)}
             {renderSection(trans.tanjun, pHex.tanjun, false, false)}
@@ -336,25 +366,26 @@ const renderTraditionalTab = (lines: number[], currentLang: "ko" | "en", initMes
           </div>
         </div>
       );
-    }
+      break;
     case 6: {
-      if (!cHex) return null;
       const changedCode = lines.map(sum => (sum === 6 || sum === 9) ? "1" : "0").join("");
       const isSpecialHex = changedCode === "111111" || changedCode === "000000";
       const highlightKeys = isSpecialHex ? ["7"] : [];
-
-      return (
+      caseText = `${isKo ? "[지괘]" : "[Changed Hexagram]"}\n${sanitize(cHex!.name)} ${cHex!.chinese_name || ''}\n${trans.judgment} ${cHex!.judgment.text}\n${trans.tanjun} ${cHex!.tanjun}\n${trans.sangjun} ${cHex!.sangjun}\n${trans.lines}\n${Object.keys(cHex!.lines || {}).sort((a,b)=>Number(a)-Number(b)).map(k => {
+        const mark = (isSpecialHex && k === "7") ? (isKo ? "[★ 핵심 조언] " : "[★ Key Advice] ") : "";
+        return `${mark}${k}. ${cHex!.lines[k].text}\n   (${cHex!.lines[k].comments})`;
+      }).join('\n')}\n\n${isKo ? "--- 과거의 상태/원인 ---\n" : "--- Past Status/Cause ---\n"}\n${isKo ? "[본괘]" : "[Primary Hexagram]"}\n${sanitize(pHex.name)} ${pHex.chinese_name || ''}\n${trans.judgment} ${pHex.judgment.text}\n${trans.tanjun} ${pHex.tanjun}\n${trans.sangjun} ${pHex.sangjun}\n${trans.lines}\n${Object.keys(pHex.lines || {}).sort((a,b)=>Number(a)-Number(b)).map(k => `${k}. ${pHex.lines[k].text}\n   (${pHex.lines[k].comments})`).join('\n')}`;
+      jsx = (
         <div className="space-y-6">
           <div className="space-y-4">
             <h4 className="text-sm font-bold text-cyan-400 uppercase tracking-wider border-l-4 border-cyan-400 pl-2">
               {trans.changedTitle}
             </h4>
-            {renderHexagramHeader(cHex)}
-            {renderSection(trans.tanjun, cHex.tanjun, false)}
-            {renderSection(trans.sangjun, cHex.sangjun, false)}
-            {renderLinesSection(cHex, highlightKeys, highlightKeys, false, false, false, currentLang)}
+            {renderHexagramHeader(cHex!)}
+            {renderSection(trans.tanjun, cHex!.tanjun, false)}
+            {renderSection(trans.sangjun, cHex!.sangjun, false)}
+            {renderLinesSection(cHex!, highlightKeys, highlightKeys, false, false, false, currentLang)}
           </div>
-
           <div className="relative flex py-4 items-center">
             <div className="flex-grow border-t border-white/10"></div>
             <span className="flex-shrink mx-4 text-xs text-slate-400 font-medium tracking-wider">
@@ -362,7 +393,6 @@ const renderTraditionalTab = (lines: number[], currentLang: "ko" | "en", initMes
             </span>
             <div className="flex-grow border-t border-white/10"></div>
           </div>
-
           <div className="space-y-4 opacity-80">
             {renderHexagramHeader(pHex, true)}
             {renderSection(trans.tanjun, pHex.tanjun, false, false)}
@@ -371,10 +401,12 @@ const renderTraditionalTab = (lines: number[], currentLang: "ko" | "en", initMes
           </div>
         </div>
       );
+      break;
     }
     default:
-      return null;
+      jsx = null;
   }
+  return { jsx, text: caseText };
 };
 
 interface Translation {
@@ -406,6 +438,7 @@ interface Translation {
   resultInitOriginal: string;
   resultGeneratedAi: string;
   resultGeneratedOriginal: string;
+  saveResult: string;
 }
 
 const translations: Record<"ko" | "en", Translation> = {
@@ -438,6 +471,7 @@ const translations: Record<"ko" | "en", Translation> = {
     resultInitOriginal: "점괘 생성 후 전통적인 주역 괘의 원문 해설이 이곳에 표시됩니다...",
     resultGeneratedAi: "🔮 [AI 현대적 해석]\n본괘와 지괘의 흐름을 보아, 현재 당신이 마주한 상황은 중대한 변화의 기로에 있습니다. AI 분석 결과, 내면의 균형을 유지하고 조급함을 버린다면 조만간 훌륭한 해답을 얻게 될 것입니다. 흐름에 순응하며 성실히 임하십시오.",
     resultGeneratedOriginal: "📜 [주역 괘 원문 해설]\n本卦(본괘) 및 變爻(변효) 분석 결과:\n乾爲天 (건위천) - 天行健 君子以 自强不息\n하늘의 운행이 굳건하니, 군자는 이를 본받아 스스로 힘쓰고 쉬지 아니한다. 변화하는 기운 속에서 바른 길을 고수함이 이롭습니다.",
+    saveResult: "결과 저장",
   },
   en: {
     headerTitle: "SYA",
@@ -468,6 +502,7 @@ const translations: Record<"ko" | "en", Translation> = {
     resultInitOriginal: "The traditional I Ching hexagram text will appear here...",
     resultGeneratedAi: "🔮 [AI Modern Interpretation]\nThis is the customized AI interpretation for your situation. Analyzing the flow of the primary and changed hexagrams, your current situation is at a turning point. If you maintain inner balance and act with patience, a clear answer will reveal itself soon.",
     resultGeneratedOriginal: "📜 [I Ching Traditional Text]\nAnalysis of Primary and Changing Lines:\nQián (The Creative) - Great success, perseverance brings reward. The movement of heaven is full of power. Thus the superior man makes himself strong and untiring.",
+    saveResult: "Save Result",
   },
 };
 
@@ -530,16 +565,131 @@ export default function Home() {
   const [isGenerated, setIsGenerated] = useState<boolean>(false);
   const [primaryHex, setPrimaryHex] = useState<HexagramData | null>(null);
   const [changedHex, setChangedHex] = useState<HexagramData | null>(null);
+  const [traditionalPdfText, setTraditionalPdfText] = useState("");
+  
+  // AI State
+  const [isLoadingAi, setIsLoadingAi] = useState<boolean>(false);
+  const [aiError, setApiError] = useState<string | null>(null);
+  const [isPdfLoading, setIsPdfLoading] = useState<boolean>(false);
+  const [isPdfEnabled, setIsPdfEnabled] = useState<boolean>(false); 
 
-  // CTA Timer for Splash screen
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (screenStage === "intro") {
-        setTapToEnterVisible(true);
-      }
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [screenStage]);
+
+  // Reset button state when input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOracleInput(e.target.value);
+    setIsPdfEnabled(false);
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!aiResult || !primaryHex) return;
+    setIsPdfLoading(true);
+
+    try {
+      // 1. Language and Data Mapping
+      const isKo = language === 'ko';
+      const pHexData = isKo ? primaryHex.ko : primaryHex.en;
+      const cHexData = changedHex ? (isKo ? changedHex.ko : changedHex.en) : null;
+
+
+      // 2. Label Setup
+      const labels = isKo ? {
+        title: "시야(視野) - 점괘 결과 보고서",
+        question: "■ 내담자의 질문",
+        hex: "■ 생성된 점괘",
+        trad: "■ 전통 괘 원문",
+        ai: "■ AI 맞춤 현대적 해석"
+      } : {
+        title: "SYA(See Your Answer) - Consultation Report",
+        question: "■ Seeker's Question",
+        hex: "■ Generated Hexagrams",
+        trad: "■ Traditional Text Interpretation",
+        ai: "■ AI Modern Interpretation"
+      };
+
+      const sanitize = (text: string) => isKo ? text : text.replace(/[\u4e00-\u9fa5]/g, '').trim();
+
+      // 3. Direct URL Font Definition (Using NanumGothic)
+      (pdfMake as any).fonts = {
+        NotoSansKR: {
+          normal: 'https://cdn.jsdelivr.net/gh/fonts-archive/NanumGothic/NanumGothic.ttf',
+          bold: 'https://cdn.jsdelivr.net/gh/fonts-archive/NanumGothic/NanumGothicBold.ttf'
+        }
+      };
+      
+      // 4. Construct Content
+      const content = [
+        { text: labels.title, style: 'header' },
+        { canvas: [{ type: 'line' as 'line', x1: 0, y1: 5, x2: 515, y2: 5, lineWidth: 1 }] },
+        { text: '\n' },
+        { text: labels.question, style: 'sectionTitle' },
+        { text: oracleInput || "질문 없음", style: 'body' },
+        { text: labels.hex, style: 'sectionTitle' },
+        { 
+          text: `${sanitize(pHexData.name)} ${isKo ? "(" + pHexData.chinese_name + ")" : ""} -> ${cHexData ? sanitize(cHexData.name) + (isKo ? " (" + cHexData.chinese_name + ")" : "") : (isKo ? "변화 없음" : "No change")}`, 
+          style: 'body' 
+        },
+        { text: labels.ai, style: 'sectionTitle' },
+        { text: aiResult, style: 'body' },
+        { text: labels.trad, style: 'sectionTitle' },
+        { text: traditionalPdfText, style: 'body' }
+        ];
+
+
+
+      // 5. Doc Definition
+      const docDefinition: TDocumentDefinitions = {
+        defaultStyle: { font: 'NotoSansKR' },
+        content,
+        styles: {
+          header: { fontSize: 18, bold: true, alignment: 'center', margin: [0, 0, 0, 20] },
+          sectionTitle: { fontSize: 13, bold: true, margin: [0, 15, 0, 5] },
+          body: { fontSize: 10, lineHeight: 1.4 }
+        } as any
+      };
+
+      // 6. Generate and Download
+      const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
+      pdfMake.createPdf(docDefinition).download(`sya-oracle-result-${timestamp}.pdf`);
+    } catch (error) {
+      console.error("PDF generation failed:", error);
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
+
+  const fetchAIInterpretation = async (question: string, p: HexagramData, c: HexagramData | null, linesArr: number[]) => {
+    setIsLoadingAi(true);
+    setApiError(null);
+    try {
+      const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "");
+      const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+
+      const movingLinesCount = linesArr.filter((s) => s === 6 || s === 9).length;
+      const ruleDescription = getZhuXiRules(movingLinesCount, language);
+
+      const prompt = `
+        System Role: You are a master of the I Ching, acting as a life mentor. Provide empathetic, clear, modern advice (3-4 paragraphs) in ${language === 'ko' ? 'Korean' : 'English'}.
+        
+        Context:
+        User Question: ${question}
+        Primary Hexagram: ${p.ko.name} / ${p.en.name} (${p.ko.gwa_name} / ${p.en.gwa_name})
+        Changed Hexagram: ${c ? (c.ko.name + "/" + c.en.name) : "None"}
+        Moving Lines Count: ${movingLinesCount}
+        Interpretation Rule to Strictly Follow: ${ruleDescription}
+
+        Provide the interpretation now:
+      `;
+
+      const result = await model.generateContent(prompt);
+      setAiResult(result.response.text());
+      setIsPdfEnabled(true); // Enable button
+    } catch (err) {
+      console.error("AI API Error:", err);
+      setApiError(language === 'ko' ? "해석 생성 중 오류가 발생했습니다." : "Error generating interpretation.");
+    } finally {
+      setIsLoadingAi(false);
+    }
+  };
 
   // Body overflow locking
   useEffect(() => {
@@ -579,6 +729,7 @@ export default function Home() {
     if (isGenerating) return;
 
     setIsGenerating(true);
+    setIsPdfEnabled(false); // Reset button state
     setActiveTab("ai");
     setLastLineIndex(0);
     setLines([]);
@@ -670,7 +821,10 @@ export default function Home() {
       setChangedHexName(`${detail.name}\n${detail.chinese_name}`);
     }
 
-    setAiResult(t.resultGeneratedAi); // Set AI result after generation
+    // Fetch AI Interpretation
+    if (pHex) {
+      fetchAIInterpretation(oracleInput, pHex, cHex, generatedLines);
+    }
 
     const movingLinesCount = generatedLines.filter((s) => s === 6 || s === 9).length;
     if (movingLinesCount >= 4) {
@@ -839,6 +993,7 @@ export default function Home() {
                   onChange={(e) => {
                     setOracleInput(e.target.value);
                     setIsGenerated(false);
+                    setIsPdfEnabled(false);
                   }}
                 />
                 {oracleInput && (
@@ -1014,7 +1169,25 @@ export default function Home() {
             {/* Interpretation Section */}
             <div className="space-y-4">
               <div className="space-y-3">
-                <label className="font-label-sm text-xs text-slate-100">{t.resultLabel}</label>
+
+                <label className="font-label-sm text-xs text-slate-100 flex justify-between items-center">
+                  <span>{t.resultLabel}</span>
+                  <button
+                    onClick={handleDownloadPDF}
+                    disabled={!isPdfEnabled || isPdfLoading}
+                    className={`text-xs bg-emerald-400 hover:bg-emerald-300 text-slate-900 font-bold px-3 py-1 rounded-full transition flex items-center gap-1 ${!isPdfEnabled || isPdfLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+
+                    {isPdfLoading ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        PDF 생성 중...
+                      </>
+                    ) : (
+                      t.saveResult
+                    )}
+                  </button>
+                </label>
                 
                 {/* Tab Headers */}
                 <div className="flex bg-slate-800/50 p-1 rounded-xl">
@@ -1045,11 +1218,25 @@ export default function Home() {
                 {/* Content Box */}
                 <div className="w-full bg-white/10 backdrop-blur-lg border-2 border-white/20 rounded-xl p-4 min-h-[120px] text-slate-100 font-body-md text-sm animate-fade-up">
                   {activeTab === "ai" ? (
-                    <div className="whitespace-pre-line">
-                      {!aiResult ? t.resultInitAi : aiResult}
+                    <div className="whitespace-pre-wrap">
+                      {isLoadingAi ? (
+                        <div className="flex items-center justify-center py-4">
+                          <RefreshCw className="w-6 h-6 animate-spin text-emerald-400" />
+                        </div>
+                      ) : aiError ? (
+                        <div className="text-red-400">{aiError}</div>
+                      ) : !aiResult ? (
+                        t.resultInitAi
+                      ) : (
+                        aiResult
+                      )}
                     </div>
                   ) : (
-                    renderTraditionalTab(isGenerating ? [] : lines, language, t.resultInitOriginal, isGenerating ? null : primaryHex, isGenerating ? null : changedHex)
+                    (() => {
+                      const { jsx, text } = renderTraditionalTab(isGenerating ? [] : lines, language, t.resultInitOriginal, isGenerating ? null : primaryHex, isGenerating ? null : changedHex);
+                      if (text !== traditionalPdfText) setTraditionalPdfText(text);
+                      return jsx;
+                    })()
                   )}
                 </div>
               </div>

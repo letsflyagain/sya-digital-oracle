@@ -1,0 +1,72 @@
+  const handleDownloadPDF = async () => {
+    if (!aiResult || !primaryHex || !traditionalPdfText) return;
+    setIsPdfLoading(true);
+
+    try {
+      // 1. Language and Data Mapping
+      const isKo = language === 'ko';
+      const pHexData = isKo ? primaryHex.ko : primaryHex.en;
+      const cHexData = changedHex ? (isKo ? changedHex.ko : changedHex.en) : null;
+      
+      const labels = isKo ? {
+        title: "시야(視野) - 점괘 결과 보고서",
+        question: "■ 내담자의 질문",
+        hex: "■ 생성된 점괘",
+        trad: "■ 전통 괘 원문",
+        ai: "■ AI 맞춤 현대적 해석"
+      } : {
+        title: "SYA(See Your Answer) - Consultation Report",
+        question: "■ Seeker's Question",
+        hex: "■ Generated Hexagrams",
+        trad: "■ Traditional Text Interpretation",
+        ai: "■ AI Modern Interpretation"
+      };
+
+      const sanitize = (text: string) => isKo ? text : text.replace(/[\u4e00-\u9fa5]/g, '').trim();
+
+      // 2. Direct URL Font Definition (Using NanumGothic)
+      (pdfMake as any).fonts = {
+        NotoSansKR: {
+          normal: 'https://cdn.jsdelivr.net/gh/fonts-archive/NanumGothic/NanumGothic.ttf',
+          bold: 'https://cdn.jsdelivr.net/gh/fonts-archive/NanumGothic/NanumGothicBold.ttf'
+        }
+      };
+      
+      // 3. Construct Content
+      const content = [
+        { text: labels.title, style: 'header' },
+        { canvas: [{ type: 'line' as 'line', x1: 0, y1: 5, x2: 515, y2: 5, lineWidth: 1 }] },
+        { text: '\n' },
+        { text: labels.question, style: 'sectionTitle' },
+        { text: oracleInput || "질문 없음", style: 'body' },
+        { text: labels.hex, style: 'sectionTitle' },
+        { 
+          text: `${sanitize(pHexData.name)} ${isKo ? "(" + pHexData.chinese_name + ")" : ""} -> ${cHexData ? sanitize(cHexData.name) + (isKo ? " (" + cHexData.chinese_name + ")" : "") : (isKo ? "변화 없음" : "No change")}`, 
+          style: 'body' 
+        },
+        { text: labels.ai, style: 'sectionTitle' },
+        { text: aiResult, style: 'body' },
+        { text: labels.trad, style: 'sectionTitle' },
+        { text: traditionalPdfText, style: 'body' }
+      ];
+
+      // 4. Doc Definition
+      const docDefinition: TDocumentDefinitions = {
+        defaultStyle: { font: 'NotoSansKR' },
+        content,
+        styles: {
+          header: { fontSize: 18, bold: true, alignment: 'center', margin: [0, 0, 0, 20] },
+          sectionTitle: { fontSize: 13, bold: true, margin: [0, 15, 0, 5] },
+          body: { fontSize: 10, lineHeight: 1.4 }
+        } as any
+      };
+
+      // 5. Generate and Download
+      const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
+      pdfMake.createPdf(docDefinition).download(`sya-oracle-result-${timestamp}.pdf`);
+    } catch (error) {
+      console.error("PDF generation failed:", error);
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
