@@ -562,6 +562,7 @@ export default function Home() {
   const [primaryHexName, setPrimaryHexName] = useState<string>("");
   const [changedHexName, setChangedHexName] = useState<string>("");
   const [aiResult, setAiResult] = useState<string>("");
+  const [showFormula, setShowFormula] = useState<boolean>(false);
   const [isGenerated, setIsGenerated] = useState<boolean>(false);
   const [primaryHex, setPrimaryHex] = useState<HexagramData | null>(null);
   const [changedHex, setChangedHex] = useState<HexagramData | null>(null);
@@ -662,7 +663,8 @@ export default function Home() {
     setApiError(null);
     try {
       const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "");
-      const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+      //const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
 
       const movingLinesCount = linesArr.filter((s) => s === 6 || s === 9).length;
       const ruleDescription = getZhuXiRules(movingLinesCount, language);
@@ -729,6 +731,7 @@ export default function Home() {
     if (isGenerating) return;
 
     setIsGenerating(true);
+    setShowFormula(false);
     setIsPdfEnabled(false); // Reset button state
     setActiveTab("ai");
     setLastLineIndex(0);
@@ -737,17 +740,25 @@ export default function Home() {
     setPrimaryHexName("");
     setChangedHexName("");
     setAiResult(""); // Clear AI result
+    
+    // Clear slots to reset formula/labels
+    setSlots([
+      { status: "idle" },
+      { status: "idle" },
+      { status: "idle" },
+    ]);
 
     const generatedLines: number[] = [];
 
     for (let i = 0; i < 6; i++) {
       setLastLineIndex(i);
+      setShowFormula(false);
 
-      // Start slots rolling
+      // Start slots rolling and clear previous formula/label
       setSlots([
-        { status: "rolling" },
-        { status: "rolling" },
-        { status: "rolling" },
+        { status: "rolling", value: undefined },
+        { status: "rolling", value: undefined },
+        { status: "rolling", value: undefined },
       ]);
 
       // Wait 800ms
@@ -788,6 +799,7 @@ export default function Home() {
       // Save line data
       generatedLines.push(sum);
       setLines((prev) => [...prev, sum]);
+      setShowFormula(true); // Show formula only AFTER lines are updated
 
       // Wait 1000ms before starting next line (or completing)
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -1058,6 +1070,9 @@ export default function Home() {
                             <span className="text-slate-300 font-bold text-xs md:text-sm uppercase tracking-wider mt-1">
                               {slot.value === 3 ? t.yangSub : t.yinSub}
                             </span>
+                            <span className="text-slate-400 font-bold text-xs mt-1">
+                              {slot.value}
+                            </span>
                           </div>
                         ) : (
                           <div className="flex flex-col items-center justify-center">
@@ -1072,6 +1087,16 @@ export default function Home() {
                       </div>
                     ))}
                   </div>
+                  {/* Final Sum Formula */}
+                  {showFormula && (
+                    <div className="text-emerald-400 font-bold text-sm mt-3 px-4">
+                       {language === 'ko' ? '동전 결과: ' : 'Coin Result: '}
+                       {slots.map(s => s.value).join(' + ')} = <span className="font-black text-base">{slots.reduce((sum, s) => sum + (s.value || 0), 0)}</span>
+                       <span className="text-emerald-400 font-black text-base ml-2">
+                         ({lines.length > 0 ? (lines[lines.length - 1] === 6 ? (language === 'ko' ? '노음' : 'Old Yin') : lines[lines.length - 1] === 7 ? (language === 'ko' ? '소양' : 'Young Yang') : lines[lines.length - 1] === 8 ? (language === 'ko' ? '소음' : 'Young Yin') : (language === 'ko' ? '노양' : 'Old Yang')) : ''})
+                       </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

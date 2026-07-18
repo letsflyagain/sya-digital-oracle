@@ -54,6 +54,13 @@ export default function InfoButtons({ currentLang }: InfoButtonsProps) {
           <p>먼 옛날, 전설 속의 성인 복희씨는 하늘과 땅, 새의 발자국, 거북이 등껍질 등 대자연을 유심히 관찰했습니다. 그리고 음(⚋)과 양(⚊)을 세 줄로 쌓아 올려 8개의 기본 괘(8괘)를 만들었습니다. 이 8괘는 하늘(乾), 땅(坤), 물(坎), 불(離)처럼 우리를 둘러싼 대자연의 여덟 가지 얼굴을 상징합니다.</p>
           <h4 className="font-bold text-amber-500 mt-4">3. 문왕과 주공의 깊은 고뇌, 인생을 닮은 '64괘'를 완성하다</h4>
           <p>세월이 흘러 주나라를 세운 문왕은 폭군에 의해 유리라는 감옥에 갇히는 고초를 겪었습니다. 그는 좁은 감옥 안에서 인간사의 수많은 굴곡을 묵묵히 명상했습니다. '하늘과 땅만으로 우리 복잡한 인생을 다 설명할 수 있을까?' 고민하던 문왕은 8괘 위에 8괘를 한 번 더 얹었습니다. (8x8=64) 그렇게 해서 탄생한 64괘는 우리 삶에서 마주하는 64가지 거대한 변화의 흐름을 뜻하게 되었습니다. 여기에 문왕이 괘 전체의 뜻인 '괘사'를 쓰고, 그의 지혜로운 아들 주공이 한 줄 한 줄의 구체적인 움직임을 뜻하는 '효사'를 덧붙이면서 비로소 주역이 완성되었습니다.</p>
+          <h4 className="font-bold text-amber-500 mt-4">4. 삼천양지(參天兩地)의 수학적 원리</h4>
+          <p>디지털 오라클은 동전 3개를 던지는 전통 주역 점법을 확률 로직으로 완벽하게 구현했습니다. 하늘을 뜻하는 앞면(양)은 3점, 땅을 뜻하는 뒷면(음)은 2점으로 계산되며, 동전 3개를 던져 나오는 점수의 합계에 따라 4가지 효(爻)가 결정됩니다.<br/>
+          * 3 + 3 + 3 = 9 : 노양(老陽) - 변화하는 양효<br/>
+          * 3 + 3 + 2 = 8 : 소음(少陰) - 정지된 음효<br/>
+          * 3 + 2 + 2 = 7 : 소양(少陽) - 정지된 양효<br/>
+          * 2 + 2 + 2 = 6 : 노음(老陰) - 변화하는 음효<br/>
+          이 수학적 확률에 기반하여 아래에서부터 위로 6개의 효가 정교하게 쌓여 당신의 점괘를 완성합니다.</p>
         </>
       ),
       title2: "🔮 시작하기 전에 꼭 읽어주세요!",
@@ -99,6 +106,13 @@ export default function InfoButtons({ currentLang }: InfoButtonsProps) {
           <p>In ancient times, a legendary sage named Fu Xi looked up at the stars, down at the earth, and studied the footprints of birds and beasts. Inspired by nature, he stacked Yin and Yang lines in groups of three, creating the 8 Trigrams (Bagua) which represent the fundamental elements of nature such as Sky, Earth, Water, and Fire.</p>
           <h4 className="font-bold text-amber-500 mt-4">3. King Wen’s Resilience — Mapping Human Destiny with the '64 Hexagrams'</h4>
           <p>King Wen of the Zhou Dynasty, while unjustly imprisoned, overlayed the 8 trigrams upon one another (8x8=64), creating the 64 Hexagrams. This rich matrix captures the 64 unique situations we encounter in life. King Wen wrote the poetic meanings for each hexagram (Guaci), and his brilliant son, the Duke of Zhou, wrote detailed explanations for each individual line (Yaoci).</p>
+          <h4 className="font-bold text-amber-500 mt-4">4. The Mathematical Principle of "San-Chian-Liang-Di" (Three for Heaven, Two for Earth)</h4>
+          <p>The Digital Oracle flawlessly replicates the traditional I Ching coin-tossing method through precise probability logic. The heads side (Yang), representing Heaven, is valued at 3 points, while the tails side (Yin), representing Earth, is valued at 2 points. The sum of the 3 coins determines one of the four types of lines (Xao):<br/>
+          * 3 + 3 + 3 = 9 : Changing Yang (Old Yang)<br/>
+          * 3 + 3 + 2 = 8 : Static Yin (Young Yin)<br/>
+          * 3 + 2 + 2 = 7 : Static Yang (Young Yang)<br/>
+          * 2 + 2 + 2 = 6 : Changing Yin (Old Yin)<br/>
+          Based on this mathematical probability, six lines are sequentially built from bottom to top to reveal your final answer.</p>
         </>
       ),
       title2: "🔮 Essential Reading Before You Begin!",
