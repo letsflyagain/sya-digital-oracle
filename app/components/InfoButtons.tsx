@@ -14,8 +14,8 @@ const Modal = ({ isOpen, onClose, title, content }: ModalProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-slate-700/80 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-slate-700 w-full h-full md:h-[90vh] md:max-w-md md:rounded-2xl overflow-hidden shadow-2xl flex flex-col border-x border-white/10" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-0 md:p-4 bg-slate-700/80 backdrop-blur-sm overflow-y-auto" onClick={onClose}>
+      <div className="bg-slate-700 w-full min-h-[50vh] md:h-auto md:max-h-[90vh] md:max-w-md md:rounded-2xl md:mt-10 overflow-hidden shadow-2xl flex flex-col border-x border-white/10" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center px-6 py-4 border-b border-white/20 bg-slate-700/90 sticky top-0">
           <h2 className="text-lg font-bold text-white truncate mr-4">{title}</h2>
           <button onClick={onClose} className="text-white hover:text-slate-200 p-1"><X size={24} /></button>
@@ -39,7 +39,7 @@ export default function InfoButtons({ currentLang }: InfoButtonsProps) {
   const t = {
     KO: {
       btn1: "주역이란?",
-      btn2: "시작하기 전 꼭 읽어보세요",
+      btn2: "시작 전 꼭 읽어보세요",
       title1: "🌓 변화의 서막: 주역(周易)과 64괘의 형성 과정",
 
       content1: (
