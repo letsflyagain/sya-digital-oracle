@@ -1037,6 +1037,9 @@ export default function Home() {
             {isGenerating && (
               <div ref={rouletteRef} className="glass-panel rounded-2xl p-6 animate-pulse-subtle" id="roulette-frame">
                 <div className="flex flex-col items-center gap-4">
+                  <h2 className="text-center text-xl md:text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-slate-100 to-emerald-400 tracking-normal mb-6 filter drop-shadow-[0_2px_8px_rgba(52,211,153,0.3)]">
+                    {language === 'ko' ? "삼천양지(參天兩地) 동전 던지기" : "Digital Coin Oracle"}
+                  </h2>
                   <span className="font-label-md text-emerald-400 text-sm uppercase tracking-widest font-bold">
                     {getRouletteLabel()}
                   </span>
