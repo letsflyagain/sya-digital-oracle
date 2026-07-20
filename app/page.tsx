@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import Script from 'next/script';
 import { HelpCircle, RefreshCw, X } from "lucide-react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import pdfMake from "pdfmake/build/pdfmake";
@@ -513,6 +514,7 @@ interface SlotState {
 
 export default function Home() {
   const { language, toggleLanguage } = useLanguage();
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
   const rouletteRef = useRef<HTMLDivElement>(null); // Ref for roulette
   const hexagramRef = useRef<HTMLDivElement>(null); // Ref for results
 
@@ -890,6 +892,22 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen bg-slate-700 select-none">
+      {gaId && (
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+            strategy="afterInteractive"
+          />
+          <Script id="ga-setup" strategy="afterInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${gaId}');
+            `}
+          </Script>
+        </>
+      )}
       {/* Splash Screen Intro */}
       {splashVisible && (
         <div
