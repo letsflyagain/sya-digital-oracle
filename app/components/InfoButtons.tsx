@@ -52,6 +52,19 @@ export default function InfoButtons({ currentLang }: InfoButtonsProps) {
           <p>주역의 출발점은 아주 단순합니다. 옛 선현들은 우주의 근본인 태극(太極)에서 두 가지 성질의 에너지가 나왔다고 보았습니다.<br/>- 하나는 어둡고, 차갑고, 부드럽게 가라앉는 음(陰, ⚋)<br/>- 다른 하나는 밝고, 따뜻하고, 강하게 뻗어 나가는 양(陽, ⚊)<br/>마치 컴퓨터가 0과 1의 이진법으로 거대한 디지털 세상을 만드는 것처럼, 동양 철학은 이 음과 양이라는 딱 두 개의 기호로 우주 만물의 모든 변화를 설명하기 시작했습니다.</p>
           <h4 className="font-bold text-amber-500 mt-4">2. 복희씨의 관찰력, 자연을 닮은 '8괘'를 빚다</h4>
           <p>먼 옛날, 전설 속의 성인 복희씨는 하늘과 땅, 새의 발자국, 거북이 등껍질 등 대자연을 유심히 관찰했습니다. 그리고 음(⚋)과 양(⚊)을 세 줄로 쌓아 올려 8개의 기본 괘(8괘)를 만들었습니다. 이 8괘는 하늘(乾), 땅(坤), 물(坎), 불(離)처럼 우리를 둘러싼 대자연의 여덟 가지 얼굴을 상징합니다.</p>
+          <div className="my-4 p-4 bg-slate-800/50 rounded-lg border border-white/10 text-sm">
+            <h5 className="font-bold text-amber-400 mb-2">팔괘(八卦): 만물을 구성하는 8가지 자연의 기운</h5>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <li><strong className="text-emerald-400">건(乾, ☰)</strong> : 하늘(天) - 강건함과 창조적 원동력</li>
+              <li><strong className="text-emerald-400">태(兌, ☱)</strong> : 못(澤) - 기쁨과 자유로운 소통</li>
+              <li><strong className="text-emerald-400">리(離, ☲)</strong> : 불(火) - 밝은 지혜와 열정적인 명료함</li>
+              <li><strong className="text-emerald-400">진(震, ☳)</strong> : 천둥(雷) - 새로운 시작과 역동적인 움직임</li>
+              <li><strong className="text-emerald-400">손(巽, ☴)</strong> : 바람(風) - 은은한 스며듦과 유연한 순응</li>
+              <li><strong className="text-emerald-400">감(坎, ☵)</strong> : 물(水) - 깊은 지혜와 난관을 헤쳐나가는 유연함</li>
+              <li><strong className="text-emerald-400">간(艮, ☶)</strong> : 산(山) - 차분한 고요와 전략적 멈춤</li>
+              <li><strong className="text-emerald-400">곤(坤, ☷)</strong> : 땅(地) - 포용력과 유순한 수용성</li>
+            </ul>
+          </div>
           <h4 className="font-bold text-amber-500 mt-4">3. 문왕과 주공의 깊은 고뇌, 인생을 닮은 '64괘'를 완성하다</h4>
           <p>세월이 흘러 주나라를 세운 문왕은 폭군에 의해 유리라는 감옥에 갇히는 고초를 겪었습니다. 그는 좁은 감옥 안에서 인간사의 수많은 굴곡을 묵묵히 명상했습니다. '하늘과 땅만으로 우리 복잡한 인생을 다 설명할 수 있을까?' 고민하던 문왕은 8괘 위에 8괘를 한 번 더 얹었습니다. (8x8=64) 그렇게 해서 탄생한 64괘는 우리 삶에서 마주하는 64가지 거대한 변화의 흐름을 뜻하게 되었습니다. 여기에 문왕이 괘 전체의 뜻인 '괘사'를 쓰고, 그의 지혜로운 아들 주공이 한 줄 한 줄의 구체적인 움직임을 뜻하는 '효사'를 덧붙이면서 비로소 주역이 완성되었습니다.</p>
           <h4 className="font-bold text-amber-500 mt-4">4. 삼천양지(參天兩地)의 수학적 원리</h4>
@@ -104,6 +117,19 @@ export default function InfoButtons({ currentLang }: InfoButtonsProps) {
           <p>The entire philosophy begins with a surprisingly simple concept. Ancient sages believed that the primordial oneness of the universe, Taiji (the Great Ultimate), split into two fundamental, complementary energies:<br/>- Yin (陰, ⚋): Dark, cold, and yielding.<br/>- Yang (陽, ⚊): Bright, warm, and firm.<br/>Like binary code creating the digital world, Eastern philosophy uses these two symbols to explain all change in the universe.</p>
           <h4 className="font-bold text-amber-500 mt-4">2. Fu Xi’s Vision — Expressing Nature through the '8 Trigrams'</h4>
           <p>In ancient times, a legendary sage named Fu Xi looked up at the stars, down at the earth, and studied the footprints of birds and beasts. Inspired by nature, he stacked Yin and Yang lines in groups of three, creating the 8 Trigrams (Bagua) which represent the fundamental elements of nature such as Sky, Earth, Water, and Fire.</p>
+          <div className="my-4 p-4 bg-slate-800/50 rounded-lg border border-white/10 text-sm">
+            <h5 className="font-bold text-amber-400 mb-2">The Eight Trigrams (Bagua, 八卦): Eight Elemental Forces of Nature</h5>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <li><strong className="text-emerald-400">Qian (乾, ☰)</strong> : Heaven - Strength and Creative Force</li>
+              <li><strong className="text-emerald-400">Dui (兌, ☱)</strong> : Lake - Joy and Open Communication</li>
+              <li><strong className="text-emerald-400">Li (離, ☲)</strong> : Fire - Bright Wisdom and Clarity</li>
+              <li><strong className="text-emerald-400">Zhen (震, ☳)</strong> : Thunder - Dynamic Movement and New Beginnings</li>
+              <li><strong className="text-emerald-400">Xun (巽, ☴)</strong> : Wind - Gentle Penetration and Flexibility</li>
+              <li><strong className="text-emerald-400">Kan (坎, ☵)</strong> : Water - Deep Wisdom and Adaptability through Peril</li>
+              <li><strong className="text-emerald-400">Gen (艮, ☶)</strong> : Mountain - Tranquil Stillness and Strategic Halting</li>
+              <li><strong className="text-emerald-400">Kun (坤, ☷)</strong> : Earth - Devotion and Receptive Nurturing</li>
+            </ul>
+          </div>
           <h4 className="font-bold text-amber-500 mt-4">3. King Wen’s Resilience — Mapping Human Destiny with the '64 Hexagrams'</h4>
           <p>King Wen of the Zhou Dynasty, while unjustly imprisoned, overlayed the 8 trigrams upon one another (8x8=64), creating the 64 Hexagrams. This rich matrix captures the 64 unique situations we encounter in life. King Wen wrote the poetic meanings for each hexagram (Guaci), and his brilliant son, the Duke of Zhou, wrote detailed explanations for each individual line (Yaoci).</p>
           <h4 className="font-bold text-amber-500 mt-4">4. The Mathematical Principle of "San-Chian-Liang-Di" (Three for Heaven, Two for Earth)</h4>

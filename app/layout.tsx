@@ -5,6 +5,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "SYA - Digital Oracle",
   description: "See Your Answer",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' }
+    ],
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
