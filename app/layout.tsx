@@ -3,8 +3,15 @@ import { LanguageProvider } from "./context/LanguageContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://syai-ching.com'),
   title: "SYA - Digital Oracle",
   description: "See Your Answer",
+  alternates: {
+    canonical: 'https://syai-ching.com',
+  },
+  openGraph: {
+    url: 'https://syai-ching.com',
+  },
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' }
