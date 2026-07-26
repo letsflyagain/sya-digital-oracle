@@ -27,6 +27,7 @@ export const metadata: Metadata = {
     description: "See Your Answer",
   },
   verification: {
+    google: 'BtgXFV3ksF39O0M6t0_VU_IYokmC_9NWv61eya_Z_V0',
     other: {
       'naver-site-verification': '058bec7a7c599a534ac496acfa91eb4fe2c565cd',
     },
