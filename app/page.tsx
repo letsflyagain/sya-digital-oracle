@@ -7,14 +7,11 @@ import { HelpCircle, RefreshCw, X } from "lucide-react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import pdfMake from "pdfmake/build/pdfmake";
 import { TDocumentDefinitions } from "pdfmake/interfaces";
-import pdfFonts from "pdfmake/build/vfs_fonts";
 import ichingData from "../data/i-ching.json";
 
+import GuideAccordion from "./components/GuideAccordion";
 import InfoButtons from "./components/InfoButtons";
 import { useLanguage } from "./context/LanguageContext";
-
-// Register fonts
-(pdfMake as any).vfs = pdfFonts;
 
 const getZhuXiRules = (movingLinesCount: number, currentLang: "ko" | "en") => {
   const rules: Record<number, string> = {
@@ -471,7 +468,7 @@ const translations: Record<"ko" | "en", Translation> = {
     resultInitAi: "점괘 생성 후 당신의 고민에 맞는 AI의 현대적 풀이가 이곳에 표시됩니다...",
     resultInitOriginal: "점괘 생성 후 전통적인 주역 괘의 원문 해설이 이곳에 표시됩니다...",
     resultGeneratedAi: "🔮 [AI 현대적 해석]\n본괘와 지괘의 흐름을 보아, 현재 당신이 마주한 상황은 중대한 변화의 기로에 있습니다. AI 분석 결과, 내면의 균형을 유지하고 조급함을 버린다면 조만간 훌륭한 해답을 얻게 될 것입니다. 흐름에 순응하며 성실히 임하십시오.",
-    resultGeneratedOriginal: "📜 [주역 괘 원문 해설]\n本卦(본괘) 및 變爻(변효) 분석 결과:\n乾爲天 (건위천) - 天行健 君子以 自强不息\n하늘의 운행이 굳건하니, 군자는 이를 본받아 스스로 힘쓰고 쉬지 아니한다. 변화하는 기운 속에서 바른 길을 고수함이 이롭습니다.",
+    resultGeneratedOriginal: "📜 [주역 괘 원문 해설]\n本卦(본괘) 및 變爻(변효) 분석 결과:\n乾爲天 (건위천) - 天行健 君子以 自强不息\n하늘의 운행이 굳건하니, 군자는 이를 본받아 스스로 힘쓰고 쉬지 아니한다. 변화하는 기운 속에서 바른 길을 고수함이 이롭습니다.",
     saveResult: "결과 저장",
   },
   en: {
@@ -515,8 +512,8 @@ interface SlotState {
 export default function Home() {
   const { language, toggleLanguage } = useLanguage();
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
-  const rouletteRef = useRef<HTMLDivElement>(null); // Ref for roulette
-  const hexagramRef = useRef<HTMLDivElement>(null); // Ref for results
+  const rouletteRef = useRef<HTMLDivElement>(null);
+  const hexagramRef = useRef<HTMLDivElement>(null);
 
   const scrollToRoulette = () => {
     if (!rouletteRef.current) return;
@@ -546,12 +543,31 @@ export default function Home() {
   const [oracleInput, setOracleInput] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [screenStage, setScreenStage] = useState<"intro" | "main">("intro");
-  const [tapToEnterVisible, setTapToEnterVisible] = useState<boolean>(false);
   
-  // Transition control for splash screen
   const [splashVisible, setSplashVisible] = useState<boolean>(true);
   const [splashAnimating, setSplashAnimating] = useState<boolean>(false);
   const [dashboardVisible, setDashboardVisible] = useState<boolean>(false);
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    if (sessionStorage.getItem('seenIntro') === 'true') {
+      setScreenStage("main");
+      setSplashVisible(false);
+      setDashboardVisible(true);
+    } else {
+      const timer = setTimeout(() => {
+        sessionStorage.setItem('seenIntro', 'true');
+        setScreenStage("main");
+        setSplashAnimating(true);
+        setDashboardVisible(true);
+        setTimeout(() => {
+          setSplashVisible(false);
+        }, 1000);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const [lastLineIndex, setLastLineIndex] = useState<number>(-1);
   const [lines, setLines] = useState<number[]>([]);
@@ -570,31 +586,20 @@ export default function Home() {
   const [changedHex, setChangedHex] = useState<HexagramData | null>(null);
   const [traditionalPdfText, setTraditionalPdfText] = useState("");
   
-  // AI State
   const [isLoadingAi, setIsLoadingAi] = useState<boolean>(false);
   const [aiError, setApiError] = useState<string | null>(null);
   const [isPdfLoading, setIsPdfLoading] = useState<boolean>(false);
   const [isPdfEnabled, setIsPdfEnabled] = useState<boolean>(false); 
-
-
-  // Reset button state when input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setOracleInput(e.target.value);
-    setIsPdfEnabled(false);
-  };
 
   const handleDownloadPDF = async () => {
     if (!aiResult || !primaryHex) return;
     setIsPdfLoading(true);
 
     try {
-      // 1. Language and Data Mapping
       const isKo = language === 'ko';
       const pHexData = isKo ? primaryHex.ko : primaryHex.en;
       const cHexData = changedHex ? (isKo ? changedHex.ko : changedHex.en) : null;
 
-
-      // 2. Label Setup
       const labels = isKo ? {
         title: "시야(視野) - 점괘 결과 보고서",
         question: "■ 내담자의 질문",
@@ -611,7 +616,6 @@ export default function Home() {
 
       const sanitize = (text: string) => isKo ? text : text.replace(/[\u4e00-\u9fa5]/g, '').trim();
 
-      // 3. Direct URL Font Definition (Using NanumGothic)
       (pdfMake as any).fonts = {
         NotoSansKR: {
           normal: 'https://cdn.jsdelivr.net/gh/fonts-archive/NanumGothic/NanumGothic.ttf',
@@ -619,7 +623,6 @@ export default function Home() {
         }
       };
       
-      // 4. Construct Content
       const content = [
         { text: labels.title, style: 'header' },
         { canvas: [{ type: 'line' as 'line', x1: 0, y1: 5, x2: 515, y2: 5, lineWidth: 1 }] },
@@ -635,11 +638,8 @@ export default function Home() {
         { text: aiResult, style: 'body' },
         { text: labels.trad, style: 'sectionTitle' },
         { text: traditionalPdfText, style: 'body' }
-        ];
+      ];
 
-
-
-      // 5. Doc Definition
       const docDefinition: TDocumentDefinitions = {
         defaultStyle: { font: 'NotoSansKR' },
         content,
@@ -650,7 +650,6 @@ export default function Home() {
         } as any
       };
 
-      // 6. Generate and Download
       const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
       pdfMake.createPdf(docDefinition).download(`sya-oracle-result-${timestamp}.pdf`);
     } catch (error) {
@@ -665,7 +664,6 @@ export default function Home() {
     setApiError(null);
     try {
       const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "");
-      //const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
       const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
 
       const movingLinesCount = linesArr.filter((s) => s === 6 || s === 9).length;
@@ -686,7 +684,7 @@ export default function Home() {
 
       const result = await model.generateContent(prompt);
       setAiResult(result.response.text());
-      setIsPdfEnabled(true); // Enable button
+      setIsPdfEnabled(true);
     } catch (err) {
       console.error("AI API Error:", err);
       setApiError(language === 'ko' ? "해석 생성 중 오류가 발생했습니다." : "Error generating interpretation.");
@@ -695,7 +693,6 @@ export default function Home() {
     }
   };
 
-  // Body overflow locking
   useEffect(() => {
     if (splashVisible) {
       document.body.style.overflow = "hidden";
@@ -704,14 +701,12 @@ export default function Home() {
     }
   }, [splashVisible]);
 
-  // Auto-scroll when generating starts
   useEffect(() => {
     if (isGenerating) {
       setTimeout(scrollToRoulette, 100);
     }
   }, [isGenerating]);
 
-  // Auto-scroll when hexagrams are generated
   useEffect(() => {
     if (isGenerated) {
       setTimeout(scrollToHexagrams, 100);
@@ -720,6 +715,7 @@ export default function Home() {
 
   const handleSplashClick = () => {
     if (screenStage === "intro") {
+      sessionStorage.setItem('seenIntro', 'true');
       setScreenStage("main");
       setSplashAnimating(true);
       setDashboardVisible(true);
@@ -734,16 +730,15 @@ export default function Home() {
 
     setIsGenerating(true);
     setShowFormula(false);
-    setIsPdfEnabled(false); // Reset button state
+    setIsPdfEnabled(false);
     setActiveTab("ai");
     setLastLineIndex(0);
     setLines([]);
     setHighlightedFrame(null);
     setPrimaryHexName("");
     setChangedHexName("");
-    setAiResult(""); // Clear AI result
+    setAiResult("");
     
-    // Clear slots to reset formula/labels
     setSlots([
       { status: "idle" },
       { status: "idle" },
@@ -756,19 +751,16 @@ export default function Home() {
       setLastLineIndex(i);
       setShowFormula(false);
 
-      // Start slots rolling and clear previous formula/label
       setSlots([
         { status: "rolling", value: undefined },
         { status: "rolling", value: undefined },
         { status: "rolling", value: undefined },
       ]);
 
-      // Wait 800ms
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       let sum = 0;
       
-      // Slot 0 Stops
       const val0 = Math.random() > 0.5 ? 3 : 2;
       sum += val0;
       setSlots([
@@ -778,7 +770,6 @@ export default function Home() {
       ]);
       await new Promise((resolve) => setTimeout(resolve, 200));
 
-      // Slot 1 Stops
       const val1 = Math.random() > 0.5 ? 3 : 2;
       sum += val1;
       setSlots([
@@ -788,7 +779,6 @@ export default function Home() {
       ]);
       await new Promise((resolve) => setTimeout(resolve, 200));
 
-      // Slot 2 Stops
       const val2 = Math.random() > 0.5 ? 3 : 2;
       sum += val2;
       setSlots([
@@ -798,12 +788,10 @@ export default function Home() {
       ]);
       await new Promise((resolve) => setTimeout(resolve, 200));
 
-      // Save line data
       generatedLines.push(sum);
       setLines((prev) => [...prev, sum]);
-      setShowFormula(true); // Show formula only AFTER lines are updated
+      setShowFormula(true);
 
-      // Wait 1000ms before starting next line (or completing)
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
@@ -812,7 +800,6 @@ export default function Home() {
     setPrimaryHex(null);
     setChangedHex(null);
 
-    // Determine hexagram names and frame highlighting
     const reversedLines = [...generatedLines].reverse();
     const primaryCode = reversedLines.map(sum => (sum === 7 || sum === 9) ? "1" : "0").join("");
     const changedCode = reversedLines.map(sum => (sum === 6 || sum === 7) ? "1" : "0").join("");
@@ -823,8 +810,6 @@ export default function Home() {
     setPrimaryHex(pHex);
     setChangedHex(cHex);
 
-    const t = translations[language];
-    
     if (pHex) {
       const detail = language === "ko" ? pHex.ko : pHex.en;
       setPrimaryHexName(`${detail.name}\n${detail.chinese_name}`);
@@ -835,7 +820,6 @@ export default function Home() {
       setChangedHexName(`${detail.name}\n${detail.chinese_name}`);
     }
 
-    // Fetch AI Interpretation
     if (pHex) {
       fetchAIInterpretation(oracleInput, pHex, cHex, generatedLines);
     }
@@ -890,6 +874,21 @@ export default function Home() {
     return t.analyzing;
   };
 
+  // 전통 탭 텍스트 동기화
+  const traditionalData = renderTraditionalTab(
+    isGenerating ? [] : lines, 
+    language, 
+    t.resultInitOriginal, 
+    isGenerating ? null : primaryHex, 
+    isGenerating ? null : changedHex
+  );
+
+  useEffect(() => {
+    if (traditionalData.text && traditionalData.text !== traditionalPdfText) {
+      setTraditionalPdfText(traditionalData.text);
+    }
+  }, [traditionalData.text, traditionalPdfText]);
+
   return (
     <div className="relative min-h-screen bg-slate-700 select-none">
       {gaId && (
@@ -908,388 +907,415 @@ export default function Home() {
           </Script>
         </>
       )}
+
       {/* Splash Screen Intro */}
-      {splashVisible && (
-        <div
-          className={`splash-screen fixed inset-0 z-[100] flex flex-col items-center justify-center p-margin-mobile ${
-            splashAnimating ? "translate-y-[-100%] opacity-0" : ""
-          }`}
-          onClick={handleSplashClick}
-        >
-          <div className="relative flex flex-col items-center animate-fade-up">
-            <div className="absolute w-64 h-64 bg-emerald-400/20 blur-[80px] rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
-            <div className="relative z-10 mb-stack-lg logo-glow animate-pulse-subtle">
-              <Image
-                alt="SYA Logo"
-                className="w-64 md:w-80 h-auto"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeGeunIKF47zPgIq3O_t93yoig2f2m3r9ixJKzfzfVcyaIuhrfaaHV1n_LWALHcpQ7_Qn2qMhDAqKYyWWTP2L_nAEOUyn4X8AStMWrOJjkgYr8_dgTnZKpAXWBMw9r6Ok2VUC7VSe3AiC4I7Z9Pupa5XRbgse0By6DkK8crdmgbiaKlFyddpdIteuzQohBehWXDMgO_rqP2yJ0zt5nr9747EWUHnmHM5QdrjGsw7g6Xv4EnDDQNGo-qw6KenzqfOLxZLc"
-                width={320}
-                height={320}
-                priority={true}
-              />
-            </div>
-            <div className="text-center space-y-4 z-10 px-4">
-              <h1 className="font-display-lg text-[26px] md:text-[32px] text-white font-bold tracking-tight">
-                {t.introTitle}
-              </h1>
-
-              {/* Mobile Paragraphs */}
-              <div className="md:hidden space-y-3">
-                <p className="font-body-lg text-slate-100 text-[15px] leading-relaxed">
-                  {t.introP1}
-                </p>
-                <p className="font-body-lg text-slate-100 text-[15px] leading-relaxed">
-                  {t.introP2}
-                </p>
-                <p className="font-label-md text-emerald-400 tracking-widest text-[14px] leading-relaxed font-bold pt-1">
-                  {t.introP3}
-                </p>
-                <p className="font-label-md text-emerald-400 tracking-widest text-[14px] leading-relaxed font-bold">
-                  <span className="bg-emerald-400/20 px-2 py-0.5 rounded">{language === 'ko' ? 'AI 주역' : 'AI I-CHING'}</span>
-                </p>
-              </div>
-
-              {/* Desktop Paragraphs */}
-              <div className="hidden md:block space-y-4">
-                <p className="font-body-lg text-slate-100 text-[18px] leading-relaxed">
-                  {t.introP1} {t.introP2}
-                </p>
-                <p className="font-label-md text-emerald-400 tracking-widest text-[16px] leading-relaxed font-bold">
-                  <span className="">{t.introP3}</span>{" "}
-                  <span className="bg-emerald-400/20 px-2 py-1 rounded">{language === 'ko' ? 'AI 주역' : 'AI I-CHING'}</span>
-                </p>
-              </div>
-            </div>
+      {isMounted && (
+        <>
+          {splashVisible && (
             <div
-              className={`absolute bottom-[-100px] left-1/2 -translate-x-1/2 animate-blink transition-opacity duration-1000 ${
-                tapToEnterVisible ? "opacity-100" : "opacity-0"
+              className={`splash-screen fixed inset-0 z-[100] flex flex-col items-center justify-center p-margin-mobile ${
+                splashAnimating ? "translate-y-[-100%] opacity-0" : ""
               }`}
+              onClick={handleSplashClick}
             >
-              <p className="font-label-md text-slate-200 text-sm tracking-widest uppercase">
-                {t.introCTA}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="relative flex flex-col items-center animate-fade-up">
+                <div className="absolute w-64 h-64 bg-emerald-400/20 blur-[80px] rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+                <div className="relative z-10 mb-stack-lg logo-glow animate-pulse-subtle">
+                  <Image
+                    alt="SYA Logo"
+                    className="w-64 md:w-80 h-auto"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeGeunIKF47zPgIq3O_t93yoig2f2m3r9ixJKzfzfVcyaIuhrfaaHV1n_LWALHcpQ7_Qn2qMhDAqKYyWWTP2L_nAEOUyn4X8AStMWrOJjkgYr8_dgTnZKpAXWBMw9r6Ok2VUC7VSe3AiC4I7Z9Pupa5XRbgse0By6DkK8crdmgbiaKlFyddpdIteuzQohBehWXDMgO_rqP2yJ0zt5nr9747EWUHnmHM5QdrjGsw7g6Xv4EnDDQNGo-qw6KenzqfOLxZLc"
+                    width={320}
+                    height={320}
+                    priority={true}
+                    style={{ width: 'auto', height: 'auto' }}
+                  />
+                </div>
+                <div className="text-center space-y-4 z-10 px-4">
+                  <h1 className="font-display-lg text-[26px] md:text-[32px] text-white font-bold tracking-tight">
+                    {t.introTitle}
+                  </h1>
 
-      {/* Main Virtual Mobile Dashboard */}
-      <div
-        className={`transition-all duration-1000 ease-out flex justify-center min-h-screen bg-slate-700 overflow-y-auto ${
-          dashboardVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-        }`}
-        id="dashboard"
-      >
-        <div className="w-full max-w-md bg-slate-700 flex flex-col min-h-screen border-x border-white/10 shadow-2xl relative">
-          <header className="sticky top-0 z-50 bg-slate-700/80 backdrop-blur-md border-b border-white/20 px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl overflow-hidden flex items-center justify-center bg-emerald-400/20">
-                <Image
-                  alt="SYA Logo Icon"
-                  className="w-full h-full object-cover"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtAamKFD-nhRdXM4vrKGq5HOLQXZ_WPmNXoAJ5v9seW54-7jOfnoziy7yzhbKXi9ieJW_MWBjRnCxfONOEy0D06NBJ98wKs5gaa97vvK7j5TOYQFmkwSyTv08iPXphu6_1jxiEXjSji8u-_XARuKANXPGV6Zqi8gThfTSTgFBjB5C5PcPaTefm5hlSGVmVWp0w5guNuHv0fFPPBleJisD8ftyXUjTmUPfeK0LUdlPYM11cWwMVmAXf_ef1feId9q1AqS0"
-                  width={56}
-                  height={56}
-                />
-              </div>
-              <h2 className="text-white text-2xl font-bold tracking-tight">
-                {t.headerTitle}
-              </h2>
-            </div>
-            <button
-              className="px-3 py-1 rounded-full border-2 border-white/30 text-xs font-label-md text-white hover:bg-white/10 transition-colors cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleLanguage();
-              }}
-            >
-              {t.langButton}
-            </button>
-          </header>
-          <InfoButtons currentLang={language.toUpperCase() as "KO" | "EN"} />
-
-          <main className="flex-1 px-6 py-8 space-y-10 pb-32">
-            {/* Input Section */}
-            <div className="space-y-3">
-              <label className="font-label-sm text-xs text-slate-100 flex items-center gap-2">
-                <HelpCircle className="w-3 h-3 animate-none" strokeWidth={2} />
-                {t.inputLabel}
-              </label>
-              <div className="relative">
-                <textarea
-                  className="w-full h-32 bg-white/10 backdrop-blur-lg border-2 border-white/20 rounded-xl p-4 pr-12 text-white font-body-md focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 outline-none resize-none transition-all placeholder:text-slate-300"
-                  placeholder={t.inputPlaceholder}
-                  value={oracleInput}
-                  onChange={(e) => {
-                    setOracleInput(e.target.value);
-                    setIsGenerated(false);
-                    setIsPdfEnabled(false);
-                  }}
-                />
-                {oracleInput && (
-                  <button
-                    onClick={() => {
-                      setOracleInput("");
-                      setIsGenerated(false);
-                    }}
-                    className="absolute bottom-4 right-4 p-1 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                )}
-              </div>
-              <button
-                onClick={handleGenerate}
-                disabled={isGenerating || !oracleInput.trim() || isGenerated}
-                className="w-full bg-emerald-400 hover:bg-emerald-300 text-slate-900 font-headline-md py-4 rounded-xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-[0_0_20px_rgba(52,211,153,0.3)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <RefreshCw
-                  className={`w-5 h-5 ${isGenerating ? "animate-yin-yang" : ""}`}
-                  strokeWidth={2}
-                />
-                <span className="font-bold">{isGenerating ? t.generateBtnLoading : t.generateBtnNormal}</span>
-              </button>
-            </div>
-
-            {/* Roulette Section */}
-            {isGenerating && (
-              <div ref={rouletteRef} className="glass-panel rounded-2xl p-6 animate-pulse-subtle" id="roulette-frame">
-                <div className="flex flex-col items-center gap-4">
-                  <h2 className="text-center text-xl md:text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-slate-100 to-emerald-400 tracking-normal mb-6 filter drop-shadow-[0_2px_8px_rgba(52,211,153,0.3)]">
-                    {language === 'ko' ? "삼천양지(參天兩地) 동전 던지기" : "Digital Coin Oracle"}
-                  </h2>
-                  <span className="font-label-md text-emerald-400 text-sm uppercase tracking-widest font-bold">
-                    {getRouletteLabel()}
-                  </span>
-                  <div className="flex gap-4">
-                    {slots.map((slot, i) => (
-                      <div
-                        key={i}
-                        className="w-24 h-24 bg-slate-800 rounded-lg flex flex-col items-center justify-center overflow-hidden border-2 border-white/20"
-                      >
-                        {slot.status === "rolling" ? (
-                          <div className="slot-rolling flex flex-col items-center justify-center">
-                            <span className="text-white font-black text-xl md:text-2xl">{t.yangText}</span>
-                            <span className="text-slate-400 font-bold text-xs md:text-sm uppercase tracking-wider mt-1">
-                              {t.yangSub}
-                            </span>
-                            <div className="h-4"></div>
-                            <span className="text-white font-black text-xl md:text-2xl">{t.yinText}</span>
-                            <span className="text-slate-400 font-bold text-xs md:text-sm uppercase tracking-wider mt-1">
-                              {t.yinSub}
-                            </span>
-                          </div>
-                        ) : slot.status === "stopped" && slot.value !== undefined ? (
-                          <div className="flex flex-col items-center justify-center h-full animate-fade-up">
-                            <span
-                              className={`${
-                                slot.value === 3 ? "text-emerald-400" : "text-cyan-400"
-                              } font-black text-xl md:text-2xl`}
-                            >
-                              {slot.value === 3 ? t.yangText : t.yinText}
-                            </span>
-                            <span className="text-slate-300 font-bold text-xs md:text-sm uppercase tracking-wider mt-1">
-                              {slot.value === 3 ? t.yangSub : t.yinSub}
-                            </span>
-                            <span className="text-slate-400 font-bold text-xs mt-1">
-                              {slot.value}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center">
-                            <span className="text-white font-black text-xl md:text-2xl">
-                              {t.yangText}/{t.yinText}
-                            </span>
-                            <span className="text-slate-400 font-bold text-xs md:text-sm uppercase tracking-wider mt-1">
-                              {t.yangSub}/{t.yinSub}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                  <div className="md:hidden space-y-3">
+                    <p className="font-body-lg text-slate-100 text-[15px] leading-relaxed">
+                      {t.introP1}
+                    </p>
+                    <p className="font-body-lg text-slate-100 text-[15px] leading-relaxed">
+                      {t.introP2}
+                    </p>
+                    <p className="font-label-md text-emerald-400 tracking-widest text-[14px] leading-relaxed font-bold pt-1">
+                      {t.introP3}
+                    </p>
+                    <p className="font-label-md text-emerald-400 tracking-widest text-[14px] leading-relaxed font-bold">
+                      <span className="bg-emerald-400/20 px-2 py-0.5 rounded">{language === 'ko' ? 'AI 주역' : 'AI I-CHING'}</span>
+                    </p>
                   </div>
-                  {/* Final Sum Formula */}
-                  {showFormula && (
-                    <div className="text-emerald-400 font-bold text-sm mt-3 px-4">
-                       {language === 'ko' ? '동전 결과: ' : 'Coin Result: '}
-                       {slots.map(s => s.value).join(' + ')} = <span className="font-black text-base">{slots.reduce((sum, s) => sum + (s.value || 0), 0)}</span>
-                       <span className="text-emerald-400 font-black text-base ml-2">
-                         ({lines.length > 0 ? (lines[lines.length - 1] === 6 ? (language === 'ko' ? '노음' : 'Old Yin') : lines[lines.length - 1] === 7 ? (language === 'ko' ? '소양' : 'Young Yang') : lines[lines.length - 1] === 8 ? (language === 'ko' ? '소음' : 'Young Yin') : (language === 'ko' ? '노양' : 'Old Yang')) : ''})
-                       </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
-            {/* Hexagram Section */}
-            <div ref={hexagramRef} className="grid grid-cols-2 gap-2" id="hexagram-container">
-              {/* Primary Hexagram Frame */}
-              <div
-                className={`glass-panel rounded-xl p-4 md:p-6 flex flex-col items-center transition-all duration-700 ${
-                  highlightedFrame === "primary" ? "highlight-hex" : ""
-                }`}
-                id="primary-hex-frame"
-              >
-                <span className="text-[10px] font-label-sm text-slate-100 uppercase mb-4 font-bold text-center">
-                  {t.primaryHexTitle}
-                </span>
-                <div className="flex flex-col-reverse gap-1 w-full items-center justify-center min-h-[144px]" id="primary-lines">
-                  {lines.map((sum, index) => {
-                    const { pType, pColor, symbol } = getLineDetails(sum);
-                    return (
-                      <div
-                        key={index}
-                        className={`relative flex items-center justify-center w-full h-4 animate-fade-up ${index === 3 ? 'mb-[0.3rem]' : ''}`}
-                      >
-                        <div className="flex items-center justify-center gap-2 w-28 h-3">
-                          {pType === "yang" ? (
-                            <div className={`h-full w-full ${pColor} rounded-none`}></div>
-                          ) : (
-                            <>
-                              <div className={`h-full w-[49%] ${pColor} rounded-none`}></div>
-                              <div className="h-full w-[2%]"></div>
-                              <div className={`h-full w-[49%] ${pColor} rounded-none`}></div>
-                            </>
-                          )}
-                          </div>
-                          {symbol && (
-                          <span className={`absolute left-[calc(50%+64px)] -translate-y-1/2 top-1/2 font-bold ${symbol === '●' ? 'text-emerald-400 text-xs' : 'text-emerald-400 text-lg'} leading-none`}>
-                            {symbol}
-                          </span>
-                          )}
-                      </div>
-                    );
-                  })}
-                </div>
-                <div
-                  className="text-sm md:text-base font-bold text-center mt-2 tracking-wide text-emerald-400 min-h-[3.5rem] whitespace-pre-line leading-relaxed"
-                  id="primary-hex-name"
-                >
-                  {primaryHexName}
-                </div>
-              </div>
-
-              {/* Changed Hexagram Frame */}
-              <div
-                className={`glass-panel rounded-xl p-4 md:p-6 flex flex-col items-center transition-all duration-700 ${
-                  highlightedFrame === "changed" ? "highlight-hex" : ""
-                }`}
-                id="changed-hex-frame"
-              >
-                <span className="text-[10px] font-label-sm text-slate-100 uppercase mb-4 font-bold text-center">
-                  {t.changedHexTitle}
-                </span>
-                <div className="flex flex-col-reverse gap-1 w-full items-center justify-center min-h-[144px]" id="changed-lines">
-                  {lines.map((sum, index) => {
-                    const { cType } = getLineDetails(sum);
-                    return (
-                      <div
-                        key={index}
-                        className={`relative flex items-center justify-center w-full h-4 animate-fade-up ${index === 3 ? 'mb-[0.3rem]' : ''}`}
-                      >
-                        <div className="flex items-center justify-center gap-2 w-28 h-3">
-                          {cType === "yang" ? (
-                            <div className="h-full w-full bg-white rounded-none"></div>
-                          ) : (
-                            <>
-                              <div className="h-full w-[49%] bg-white rounded-none"></div>
-                              <div className="h-full w-[2%]"></div>
-                              <div className="h-full w-[49%] bg-white rounded-none"></div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div
-                  className="text-sm md:text-base font-bold text-center mt-2 tracking-wide text-cyan-400 min-h-[3.5rem] whitespace-pre-line leading-relaxed"
-                  id="changed-hex-name"
-                >
-                  {changedHexName}
+                  <div className="hidden md:block space-y-4">
+                    <p className="font-body-lg text-slate-100 text-[18px] leading-relaxed">
+                      {t.introP1} {t.introP2}
+                    </p>
+                    <p className="font-label-md text-emerald-400 tracking-widest text-[16px] leading-relaxed font-bold">
+                      <span className="">{t.introP3}</span>{" "}
+                      <span className="bg-emerald-400/20 px-2 py-1 rounded">{language === 'ko' ? 'AI 주역' : 'AI I-CHING'}</span>
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Interpretation Section */}
-            <div className="space-y-4">
-              <div className="space-y-3">
+          {/* Main Dashboard */}
+          <div
+            className={`transition-all duration-1000 ease-out flex justify-center min-h-screen bg-slate-700 overflow-y-auto ${
+              dashboardVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+            }`}
+            id="dashboard"
+          >
+            <div className="w-full max-w-md bg-slate-700 flex flex-col min-h-screen border-x border-white/10 shadow-2xl relative">
+              <header className="sticky top-0 z-50 bg-slate-700/80 backdrop-blur-md border-b border-white/20 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl overflow-hidden flex items-center justify-center bg-emerald-400/20">
+                    <Image
+                      alt="SYA Logo Icon"
+                      className="w-full h-full object-cover"
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtAamKFD-nhRdXM4vrKGq5HOLQXZ_WPmNXoAJ5v9seW54-7jOfnoziy7yzhbKXi9ieJW_MWBjRnCxfONOEy0D06NBJ98wKs5gaa97vvK7j5TOYQFmkwSyTv08iPXphu6_1jxiEXjSji8u-_XARuKANXPGV6Zqi8gThfTSTgFBjB5C5PcPaTefm5hlSGVmVWp0w5guNuHv0fFPPBleJisD8ftyXUjTmUPfeK0LUdlPYM11cWwMVmAXf_ef1feId9q1AqS0"
+                      width={56}
+                      height={56}
+                      style={{ width: 'auto', height: 'auto' }}
+                    />
+                  </div>
+                  <h2 className="text-white text-2xl font-bold tracking-tight">
+                    {t.headerTitle}
+                  </h2>
+                </div>
+                <button
+                  className="px-3 py-1 rounded-full border-2 border-white/30 text-xs font-label-md text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleLanguage();
+                  }}
+                >
+                  {t.langButton}
+                </button>
+              </header>
 
-                <label className="font-label-sm text-xs text-slate-100 flex justify-between items-center">
-                  <span>{t.resultLabel}</span>
-                  <button
-                    onClick={handleDownloadPDF}
-                    disabled={!isPdfEnabled || isPdfLoading}
-                    className={`text-xs bg-emerald-400 hover:bg-emerald-300 text-slate-900 font-bold px-3 py-1 rounded-full transition flex items-center gap-1 ${!isPdfEnabled || isPdfLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
+              <InfoButtons currentLang={language.toUpperCase() as "KO" | "EN"} />
 
-                    {isPdfLoading ? (
-                      <>
-                        <RefreshCw className="w-3 h-3 animate-spin" />
-                        PDF 생성 중...
-                      </>
-                    ) : (
-                      t.saveResult
+              <main className="flex-1 px-6 py-8 space-y-10 pb-32">
+                {/* Input Section */}
+                <div className="space-y-3">
+                  <label className="font-label-sm text-xs text-slate-100 flex items-center gap-2">
+                    <HelpCircle className="w-3 h-3 animate-none" strokeWidth={2} />
+                    {t.inputLabel}
+                  </label>
+                  <div className="relative">
+                    <textarea
+                      className="w-full h-32 bg-white/10 backdrop-blur-lg border-2 border-white/20 rounded-xl p-4 pr-12 text-white font-body-md focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 outline-none resize-none transition-all placeholder:text-slate-300"
+                      placeholder={t.inputPlaceholder}
+                      value={oracleInput}
+                      onChange={(e) => {
+                        setOracleInput(e.target.value);
+                        setIsGenerated(false);
+                        setIsPdfEnabled(false);
+                      }}
+                    />
+                    {oracleInput && (
+                      <button
+                        onClick={() => {
+                          setOracleInput("");
+                          setIsGenerated(false);
+                          setIsPdfEnabled(false);
+                        }}
+                        className="absolute bottom-4 right-4 p-1 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
                     )}
-                  </button>
-                </label>
-                
-                {/* Tab Headers */}
-                <div className="flex bg-slate-800/50 p-1 rounded-xl">
+                  </div>
                   <button
-                    type="button"
-                    onClick={() => setActiveTab("ai")}
-                    className={`flex-1 py-2 text-center text-xs md:text-sm rounded-lg transition-all cursor-pointer ${
-                      activeTab === "ai"
-                        ? "bg-white/20 text-white font-bold"
-                        : "text-slate-400 hover:text-white"
-                    }`}
+                    onClick={handleGenerate}
+                    disabled={isGenerating || !oracleInput.trim() || isGenerated}
+                    className="w-full bg-emerald-400 hover:bg-emerald-300 text-slate-900 font-headline-md py-4 rounded-xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-[0_0_20px_rgba(52,211,153,0.3)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {t.tabAi}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("original")}
-                    className={`flex-1 py-2 text-center text-xs md:text-sm rounded-lg transition-all cursor-pointer ${
-                      activeTab === "original"
-                        ? "bg-white/20 text-white font-bold"
-                        : "text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    {t.tabOriginal}
+                    <RefreshCw
+                      className={`w-5 h-5 ${isGenerating ? "animate-yin-yang" : ""}`}
+                      strokeWidth={2}
+                    />
+                    <span className="font-bold">{isGenerating ? t.generateBtnLoading : t.generateBtnNormal}</span>
                   </button>
                 </div>
 
-                {/* Content Box */}
-                <div className="w-full bg-white/10 backdrop-blur-lg border-2 border-white/20 rounded-xl p-4 min-h-[120px] text-slate-100 font-body-md text-sm animate-fade-up">
-                  {activeTab === "ai" ? (
-                    <div className="whitespace-pre-wrap">
-                      {isLoadingAi ? (
-                        <div className="flex items-center justify-center py-4">
-                          <RefreshCw className="w-6 h-6 animate-spin text-emerald-400" />
+                {/* Roulette Section */}
+                {isGenerating && (
+                  <div ref={rouletteRef} className="glass-panel rounded-2xl p-6 animate-pulse-subtle" id="roulette-frame">
+                    <div className="flex flex-col items-center gap-4">
+                      <h2 className="text-center text-xl md:text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-slate-100 to-emerald-400 tracking-normal mb-6 filter drop-shadow-[0_2px_8px_rgba(52,211,153,0.3)]">
+                        {language === 'ko' ? "삼천양지(參天兩地) 동전 던지기" : "Digital Coin Oracle"}
+                      </h2>
+                      <span className="font-label-md text-emerald-400 text-sm uppercase tracking-widest font-bold">
+                        {getRouletteLabel()}
+                      </span>
+                      <div className="flex gap-4">
+                        {slots.map((slot, i) => (
+                          <div
+                            key={i}
+                            className="w-24 h-24 bg-slate-800 rounded-lg flex flex-col items-center justify-center overflow-hidden border-2 border-white/20"
+                          >
+                            {slot.status === "rolling" ? (
+                              <div className="slot-rolling flex flex-col items-center justify-center">
+                                <span className="text-white font-black text-xl md:text-2xl">{t.yangText}</span>
+                                <span className="text-slate-400 font-bold text-xs md:text-sm uppercase tracking-wider mt-1">
+                                  {t.yangSub}
+                                </span>
+                                <div className="h-4"></div>
+                                <span className="text-white font-black text-xl md:text-2xl">{t.yinText}</span>
+                                <span className="text-slate-400 font-bold text-xs md:text-sm uppercase tracking-wider mt-1">
+                                  {t.yinSub}
+                                </span>
+                              </div>
+                            ) : slot.status === "stopped" && slot.value !== undefined ? (
+                              <div className="flex flex-col items-center justify-center h-full animate-fade-up">
+                                <span
+                                  className={`${
+                                    slot.value === 3 ? "text-emerald-400" : "text-cyan-400"
+                                  } font-black text-xl md:text-2xl`}
+                                >
+                                  {slot.value === 3 ? t.yangText : t.yinText}
+                                </span>
+                                <span className="text-slate-300 font-bold text-xs md:text-sm uppercase tracking-wider mt-1">
+                                  {slot.value === 3 ? t.yangSub : t.yinSub}
+                                </span>
+                                <span className="text-slate-400 font-bold text-xs mt-1">
+                                  {slot.value}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center">
+                                <span className="text-white font-black text-xl md:text-2xl">
+                                  {t.yangText}/{t.yinText}
+                                </span>
+                                <span className="text-slate-400 font-bold text-xs md:text-sm uppercase tracking-wider mt-1">
+                                  {t.yangSub}/{t.yinSub}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {/* Final Sum Formula */}
+                      {showFormula && (
+                        <div className="text-emerald-400 font-bold text-sm mt-3 px-4">
+                           {language === 'ko' ? '동전 결과: ' : 'Coin Result: '}
+                           {slots.map(s => s.value).join(' + ')} = <span className="font-black text-base">{slots.reduce((sum, s) => sum + (s.value || 0), 0)}</span>
+                           <span className="text-emerald-400 font-black text-base ml-2">
+                             ({lines.length > 0 ? (lines[lines.length - 1] === 6 ? (language === 'ko' ? '노음' : 'Old Yin') : lines[lines.length - 1] === 7 ? (language === 'ko' ? '소양' : 'Young Yang') : lines[lines.length - 1] === 8 ? (language === 'ko' ? '소음' : 'Young Yin') : (language === 'ko' ? '노양' : 'Old Yang')) : ''})
+                           </span>
                         </div>
-                      ) : aiError ? (
-                        <div className="text-red-400">{aiError}</div>
-                      ) : !aiResult ? (
-                        t.resultInitAi
-                      ) : (
-                        aiResult
                       )}
                     </div>
-                  ) : (
-                    (() => {
-                      const { jsx, text } = renderTraditionalTab(isGenerating ? [] : lines, language, t.resultInitOriginal, isGenerating ? null : primaryHex, isGenerating ? null : changedHex);
-                      if (text !== traditionalPdfText) setTraditionalPdfText(text);
-                      return jsx;
-                    })()
-                  )}
+                  </div>
+                )}
+
+                {/* Hexagram Section */}
+                <div ref={hexagramRef} className="grid grid-cols-2 gap-2" id="hexagram-container">
+                  {/* Primary Hexagram Frame */}
+                  <div
+                    className={`glass-panel rounded-xl p-4 md:p-6 flex flex-col items-center transition-all duration-700 ${
+                      highlightedFrame === "primary" ? "highlight-hex" : ""
+                    }`}
+                    id="primary-hex-frame"
+                  >
+                    <span className="text-[10px] font-label-sm text-slate-100 uppercase mb-4 font-bold text-center">
+                      {t.primaryHexTitle}
+                    </span>
+                    <div className="flex flex-col-reverse gap-1 w-full items-center justify-center min-h-[144px]" id="primary-lines">
+                      {lines.map((sum, index) => {
+                        const { pType, pColor, symbol } = getLineDetails(sum);
+                        return (
+                          <div
+                            key={index}
+                            className={`relative flex items-center justify-center w-full h-4 animate-fade-up ${index === 3 ? 'mb-[0.3rem]' : ''}`}
+                          >
+                            <div className="flex items-center justify-center gap-2 w-28 h-3">
+                              {pType === "yang" ? (
+                                <div className={`h-full w-full ${pColor} rounded-none`}></div>
+                              ) : (
+                                <>
+                                  <div className={`h-full w-[49%] ${pColor} rounded-none`}></div>
+                                  <div className="h-full w-[2%]"></div>
+                                  <div className={`h-full w-[49%] ${pColor} rounded-none`}></div>
+                                </>
+                              )}
+                            </div>
+                            {symbol && (
+                              <span className={`absolute left-[calc(50%+64px)] -translate-y-1/2 top-1/2 font-bold ${symbol === '●' ? 'text-emerald-400 text-xs' : 'text-emerald-400 text-lg'} leading-none`}>
+                                {symbol}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div
+                      className="text-sm md:text-base font-bold text-center mt-2 tracking-wide text-emerald-400 min-h-[3.5rem] whitespace-pre-line leading-relaxed"
+                      id="primary-hex-name"
+                    >
+                      {primaryHexName}
+                    </div>
+                  </div>
+
+                  {/* Changed Hexagram Frame */}
+                  <div
+                    className={`glass-panel rounded-xl p-4 md:p-6 flex flex-col items-center transition-all duration-700 ${
+                      highlightedFrame === "changed" ? "highlight-hex" : ""
+                    }`}
+                    id="changed-hex-frame"
+                  >
+                    <span className="text-[10px] font-label-sm text-slate-100 uppercase mb-4 font-bold text-center">
+                      {t.changedHexTitle}
+                    </span>
+                    <div className="flex flex-col-reverse gap-1 w-full items-center justify-center min-h-[144px]" id="changed-lines">
+                      {lines.map((sum, index) => {
+                        const { cType } = getLineDetails(sum);
+                        return (
+                          <div
+                            key={index}
+                            className={`relative flex items-center justify-center w-full h-4 animate-fade-up ${index === 3 ? 'mb-[0.3rem]' : ''}`}
+                          >
+                            <div className="flex items-center justify-center gap-2 w-28 h-3">
+                              {cType === "yang" ? (
+                                <div className="h-full w-full bg-white rounded-none"></div>
+                              ) : (
+                                <>
+                                  <div className="h-full w-[49%] bg-white rounded-none"></div>
+                                  <div className="h-full w-[2%]"></div>
+                                  <div className="h-full w-[49%] bg-white rounded-none"></div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div
+                      className="text-sm md:text-base font-bold text-center mt-2 tracking-wide text-cyan-400 min-h-[3.5rem] whitespace-pre-line leading-relaxed"
+                      id="changed-hex-name"
+                    >
+                      {changedHexName}
+                    </div>
+                  </div>
                 </div>
-              </div>
+
+                {/* Interpretation Section */}
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <label className="font-label-sm text-xs text-slate-100 flex justify-between items-center">
+                      <span>{t.resultLabel}</span>
+                      <button
+                        onClick={handleDownloadPDF}
+                        disabled={!isPdfEnabled || isPdfLoading}
+                        className={`text-xs bg-emerald-400 hover:bg-emerald-300 text-slate-900 font-bold px-3 py-1 rounded-full transition flex items-center gap-1 ${!isPdfEnabled || isPdfLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        {isPdfLoading ? (
+                          <>
+                            <RefreshCw className="w-3 h-3 animate-spin" />
+                            PDF 생성 중...
+                          </>
+                        ) : (
+                          t.saveResult
+                        )}
+                      </button>
+                    </label>
+
+                    {/* Tab Headers */}
+                    <div className="flex bg-slate-800/50 p-1 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("ai")}
+                        className={`flex-1 py-2 text-center text-xs md:text-sm rounded-lg transition-all cursor-pointer ${
+                          activeTab === "ai"
+                            ? "bg-white/20 text-white font-bold"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        {t.tabAi}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("original")}
+                        className={`flex-1 py-2 text-center text-xs md:text-sm rounded-lg transition-all cursor-pointer ${
+                          activeTab === "original"
+                            ? "bg-white/20 text-white font-bold"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        {t.tabOriginal}
+                      </button>
+                    </div>
+
+                    {/* Content Box */}
+                    <div className="w-full bg-white/10 backdrop-blur-lg border-2 border-white/20 rounded-xl p-4 min-h-[120px] text-slate-100 font-body-md text-sm animate-fade-up">
+                      {activeTab === "ai" ? (
+                        <div className="whitespace-pre-wrap">
+                          {isLoadingAi ? (
+                            <div className="flex items-center justify-center py-4">
+                              <RefreshCw className="w-6 h-6 animate-spin text-emerald-400" />
+                            </div>
+                          ) : aiError ? (
+                            <div className="text-red-400">{aiError}</div>
+                          ) : !aiResult ? (
+                            t.resultInitAi
+                          ) : (
+                            aiResult
+                          )}
+                        </div>
+                      ) : (
+                        traditionalData.jsx
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <GuideAccordion />
+
+                <footer className="px-6 py-10 mt-10 border-t border-white/10 bg-slate-800/30 text-slate-400 text-sm space-y-6">
+                  <div>
+                    <h4 className="font-bold text-slate-100 mb-2">
+                      {language === "ko" 
+                        ? "시야(視野), See Your Answer(SYA) - AI 주역" 
+                        : "SYA - Digital Oracle - AI I-Ching"}
+                    </h4>
+                    <p>
+                      {language === "ko" 
+                        ? "AI로 점쳐보는 동양철학의 지혜 — 인생의 문제 앞에 꽉 막힌 당신의 시야, 답을 보여 드립니다." 
+                        : "Eastern wisdom through AI — See Your Answer for life's blocked vision."}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-4">
+                    <a href="/privacy" className="hover:text-emerald-400 transition-colors">
+                      {language === "ko" ? "개인정보처리방침" : "Privacy Policy"}
+                    </a>
+                    <span className="text-slate-600">|</span>
+                    <a href="/terms" className="hover:text-emerald-400 transition-colors">
+                      {language === "ko" ? "이용약관" : "Terms of Service"}
+                    </a>
+                    <span className="text-slate-600">|</span>
+                    <a href="mailto:letsflyagain@gmail.com" className="hover:text-emerald-400 transition-colors">
+                      {language === "ko" ? "문의하기 (letsflyagain@gmail.com)" : "Contact (letsflyagain@gmail.com)"}
+                    </a>
+                  </div>
+
+                  <div>
+                    <p>© 2026 SYA AI I-Ching. All rights reserved.</p>
+                  </div>
+                </footer>
+              </main>
             </div>
-          </main>
-        </div>
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

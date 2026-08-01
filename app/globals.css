@@ -87,7 +87,6 @@ body {
 .splash-screen {
   background-color: #334155;
   transition: transform 1s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.8s ease;
-  cursor: pointer;
 }
 
 .animate-fade-up {

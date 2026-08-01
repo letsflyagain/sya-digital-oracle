@@ -44,7 +44,7 @@ export default function InfoButtons({ currentLang }: InfoButtonsProps) {
 
       content1: (
         <>
-          <blockquote className="border-l-4 border-amber-500 pl-4 py-2 bg-slate-800 italic text-slate-200">
+          <blockquote className="border-l-4 border-amber-500 pl-4 py-2 bg-slate-800 italic text-slate-200 mb-4">
             "주역은 미래를 맞히는 단순한 점술서가 아닙니다. 끊임없이 요동치는 삶이라는 바다 위에서, 우리가 균형을 잡고 앞으로 나아갈 수 있도록 돕는 따뜻한 지혜의 지도입니다."
           </blockquote>
           <p>안녕하세요! 주역(周易)이라는 깊고 신비로운 세계에 오신 것을 환영합니다. 주역을 한마디로 정의하면 '변화(易)에 대한 주나라(周)의 기록'입니다. 이 넓고 깊은 동양 철학의 뿌리가 어떻게 64개의 괘로 완성되었는지, 그 재미있는 탄생 비화를 3단계로 나누어 들려드릴게요.</p>
@@ -79,7 +79,7 @@ export default function InfoButtons({ currentLang }: InfoButtonsProps) {
       title2: "🔮 시작하기 전에 꼭 읽어주세요!",
       content2: (
         <>
-          <blockquote className="border-l-4 border-amber-500 pl-4 py-2 bg-slate-800 italic text-slate-200">
+          <blockquote className="border-l-4 border-amber-500 pl-4 py-2 bg-slate-800 italic text-slate-200 mb-4">
             "주역은 삶의 길을 비추는 등불이지만, 그 길을 걸어가는 주인공은 오직 당신입니다."
           </blockquote>
           <h4 className="font-bold text-green-400 mt-4 underline">💡 주역점을 100% 활용하는 팁</h4>
@@ -109,7 +109,7 @@ export default function InfoButtons({ currentLang }: InfoButtonsProps) {
       title1: "🌓 The Dawn of Change: The Story of the I Ching and the 64 Hexagrams",
       content1: (
         <>
-          <blockquote className="border-l-4 border-amber-500 pl-4 py-2 bg-slate-800 italic text-slate-200">
+          <blockquote className="border-l-4 border-amber-500 pl-4 py-2 bg-slate-800 italic text-slate-200 mb-4">
             "The I Ching is not a mere book of fortune-telling. It is a warm, guiding map of wisdom, helping us find our balance and inner peace amidst the turbulent, ever-shifting ocean of life."
           </blockquote>
           <p>Welcome to the deep, mysterious world of the I Ching. Here is the story of how this vast and deep oriental philosophy was completed into 64 hexagrams, divided into three stages.</p>
@@ -144,7 +144,7 @@ export default function InfoButtons({ currentLang }: InfoButtonsProps) {
       title2: "🔮 Essential Reading Before You Begin!",
       content2: (
         <>
-          <blockquote className="border-l-4 border-amber-500 pl-4 py-2 bg-slate-800 italic text-slate-200">
+          <blockquote className="border-l-4 border-amber-500 pl-4 py-2 bg-slate-800 italic text-slate-200 mb-4">
             "The I Ching is a lantern that lights your path, but you are the only one who must walk it."
           </blockquote>
           <h4 className="font-bold text-green-400 mt-4 underline">💡 Tips for Getting the Most Out of Your Reading</h4>
@@ -174,11 +174,11 @@ export default function InfoButtons({ currentLang }: InfoButtonsProps) {
 
   return (
     <div className="flex gap-2 p-2">
-      <button onClick={() => setIsIChingOpen(true)} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm transition">
+      <button onClick={() => setIsIChingOpen(true)} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-white transition">
         <HelpCircle size={16} className="text-amber-500" />
         <span>{activeT.btn1}</span>
       </button>
-      <button onClick={() => setIsBeforeOpen(true)} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm transition">
+      <button onClick={() => setIsBeforeOpen(true)} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-white transition">
         <AlertCircle size={16} className="text-amber-500" />
         <span>{activeT.btn2}</span>
       </button>
