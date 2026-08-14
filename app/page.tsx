@@ -13,6 +13,8 @@ import GuideAccordion from "./components/GuideAccordion";
 import InfoButtons from "./components/InfoButtons";
 import { useLanguage } from "./context/LanguageContext";
 
+const SHOW_INTRO = false;
+
 const getZhuXiRules = (movingLinesCount: number, currentLang: "ko" | "en") => {
   const rules: Record<number, string> = {
     0: currentLang === 'ko' ? "분석 무게중심: 본괘 100%. 상황 정체, 본괘의 전체 괘사와 대운을 중심에 두고 풀이하십시오." : "Focus: 100% Original Hexagram. Situation is stagnant; interpret the overall Judgment and flow.",
@@ -542,15 +544,17 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"ai" | "original">("ai");
   const [oracleInput, setOracleInput] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [screenStage, setScreenStage] = useState<"intro" | "main">("intro");
+  const [screenStage, setScreenStage] = useState<"intro" | "main">(SHOW_INTRO ? "intro" : "main");
   
-  const [splashVisible, setSplashVisible] = useState<boolean>(true);
+  const [splashVisible, setSplashVisible] = useState<boolean>(SHOW_INTRO);
   const [splashAnimating, setSplashAnimating] = useState<boolean>(false);
-  const [dashboardVisible, setDashboardVisible] = useState<boolean>(false);
+  const [dashboardVisible, setDashboardVisible] = useState<boolean>(!SHOW_INTRO);
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
   useEffect(() => {
     setIsMounted(true);
+    if (!SHOW_INTRO) return;
+
     if (sessionStorage.getItem('seenIntro') === 'true') {
       setScreenStage("main");
       setSplashVisible(false);
