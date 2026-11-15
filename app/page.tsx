@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import Script from 'next/script';
 import { HelpCircle, RefreshCw, X } from "lucide-react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -1031,12 +1032,12 @@ export default function Home() {
               <InfoButtons currentLang={language.toUpperCase() as "KO" | "EN"} />
 
               <div className="px-6 pt-2">
-                <a
+                <Link
                   href="/hexagrams"
                   className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-amber-600/30 to-emerald-600/30 hover:from-amber-600/40 hover:to-emerald-600/40 border border-amber-500/30 rounded-xl text-amber-300 font-bold text-sm transition-all shadow-lg"
                 >
                   <span>📚 {language === 'ko' ? '주역 64괘 백과사전 바로가기' : 'Explore I Ching 64 Hexagrams Encyclopedia'}</span>
-                </a>
+                </Link>
               </div>
 
               <main className="flex-1 px-6 py-8 space-y-10 pb-32">
@@ -1331,17 +1332,17 @@ export default function Home() {
                   </div>
 
                   <div className="flex flex-wrap gap-4">
-                    <a href="/hexagrams" className="hover:text-emerald-400 transition-colors font-bold text-amber-400">
+                    <Link href="/hexagrams" className="hover:text-emerald-400 transition-colors font-bold text-amber-400">
                       {language === "ko" ? "📚 주역 64괘 백과사전" : "📚 64 Hexagrams Encyclopedia"}
-                    </a>
+                    </Link>
                     <span className="text-slate-600">|</span>
-                    <a href="/privacy" className="hover:text-emerald-400 transition-colors">
+                    <Link href="/privacy" className="hover:text-emerald-400 transition-colors">
                       {language === "ko" ? "개인정보처리방침" : "Privacy Policy"}
-                    </a>
+                    </Link>
                     <span className="text-slate-600">|</span>
-                    <a href="/terms" className="hover:text-emerald-400 transition-colors">
+                    <Link href="/terms" className="hover:text-emerald-400 transition-colors">
                       {language === "ko" ? "이용약관" : "Terms of Service"}
-                    </a>
+                    </Link>
                     <span className="text-slate-600">|</span>
                     <a href="mailto:letsflyagain@gmail.com" className="hover:text-emerald-400 transition-colors">
                       {language === "ko" ? "문의하기" : "Contact"}
