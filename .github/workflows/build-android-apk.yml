@@ -1,13 +1,14 @@
-name: Build Android Debug APK
+name: Build Android APK and AAB
 
 on:
   push:
     branches:
       - mobile-app
+      - main
   workflow_dispatch:
 
 jobs:
-  build-apk:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -41,8 +42,31 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK Artifact
+      - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: sya-iching-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Decode Keystore
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release-key.jks
+
+      - name: Build Android Release AAB
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        working-directory: ./android
+        run: |
+          chmod +x gradlew
+          ./gradlew bundleRelease \
+            -PMYAPP_UPLOAD_STORE_FILE=release-key.jks \
+            -PMYAPP_UPLOAD_STORE_PASSWORD="${{ secrets.KEYSTORE_PASSWORD }}" \
+            -PMYAPP_UPLOAD_KEY_ALIAS="${{ secrets.KEY_ALIAS }}" \
+            -PMYAPP_UPLOAD_KEY_PASSWORD="${{ secrets.KEY_PASSWORD }}"
+
+      - name: Upload Release AAB Artifact
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: sya-iching-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
