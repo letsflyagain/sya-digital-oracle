@@ -7,14 +7,6 @@ import { useEffect, useState } from "react";
 
 export default function GuideAccordion() {
   const { language } = useLanguage();
-  const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
-
   const lang = language.toUpperCase() as "KO" | "EN";
   const modalContent = getModalContent(lang);
 

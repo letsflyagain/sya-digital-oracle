@@ -93,11 +93,9 @@ const Accordion = ({ title, children, defaultOpen = false }: { title: string; ch
         <span>{title}</span>
         <span className="text-xs">{isOpen ? "▲" : "▼"}</span>
       </button>
-      {isOpen && (
-        <div className="px-4 py-3 text-sm text-slate-300 border-t border-white/5 bg-slate-800/40">
-          {children}
-        </div>
-      )}
+      <div className={`px-4 py-3 text-sm text-slate-300 border-t border-white/5 bg-slate-800/40 ${isOpen ? "block" : "hidden"}`}>
+        {children}
+      </div>
     </div>
   );
 };
@@ -913,69 +911,67 @@ export default function Home() {
       )}
 
       {/* Splash Screen Intro */}
-      {isMounted && (
-        <>
-          {splashVisible && (
-            <div
-              className={`splash-screen fixed inset-0 z-[100] flex flex-col items-center justify-center p-margin-mobile ${
-                splashAnimating ? "translate-y-[-100%] opacity-0" : ""
-              }`}
-              onClick={handleSplashClick}
-            >
-              <div className="relative flex flex-col items-center animate-fade-up">
-                <div className="absolute w-64 h-64 bg-emerald-400/20 blur-[80px] rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
-                <div className="relative z-10 mb-stack-lg logo-glow animate-pulse-subtle">
-                  <Image
-                    alt="SYA Logo"
-                    className="w-64 md:w-80 h-auto"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeGeunIKF47zPgIq3O_t93yoig2f2m3r9ixJKzfzfVcyaIuhrfaaHV1n_LWALHcpQ7_Qn2qMhDAqKYyWWTP2L_nAEOUyn4X8AStMWrOJjkgYr8_dgTnZKpAXWBMw9r6Ok2VUC7VSe3AiC4I7Z9Pupa5XRbgse0By6DkK8crdmgbiaKlFyddpdIteuzQohBehWXDMgO_rqP2yJ0zt5nr9747EWUHnmHM5QdrjGsw7g6Xv4EnDDQNGo-qw6KenzqfOLxZLc"
-                    width={320}
-                    height={320}
-                    priority={true}
-                    style={{ width: 'auto', height: 'auto' }}
-                  />
-                </div>
-                <div className="text-center space-y-4 z-10 px-4">
-                  <h1 className="font-display-lg text-[26px] md:text-[32px] text-white font-bold tracking-tight">
-                    {t.introTitle}
-                  </h1>
+      {isMounted && splashVisible && (
+        <div
+          className={`splash-screen fixed inset-0 z-[100] flex flex-col items-center justify-center p-margin-mobile ${
+            splashAnimating ? "translate-y-[-100%] opacity-0" : ""
+          }`}
+          onClick={handleSplashClick}
+        >
+          <div className="relative flex flex-col items-center animate-fade-up">
+            <div className="absolute w-64 h-64 bg-emerald-400/20 blur-[80px] rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+            <div className="relative z-10 mb-stack-lg logo-glow animate-pulse-subtle">
+              <Image
+                alt="SYA Logo"
+                className="w-64 md:w-80 h-auto"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeGeunIKF47zPgIq3O_t93yoig2f2m3r9ixJKzfzfVcyaIuhrfaaHV1n_LWALHcpQ7_Qn2qMhDAqKYyWWTP2L_nAEOUyn4X8AStMWrOJjkgYr8_dgTnZKpAXWBMw9r6Ok2VUC7VSe3AiC4I7Z9Pupa5XRbgse0By6DkK8crdmgbiaKlFyddpdIteuzQohBehWXDMgO_rqP2yJ0zt5nr9747EWUHnmHM5QdrjGsw7g6Xv4EnDDQNGo-qw6KenzqfOLxZLc"
+                width={320}
+                height={320}
+                priority={true}
+                style={{ width: 'auto', height: 'auto' }}
+              />
+            </div>
+            <div className="text-center space-y-4 z-10 px-4">
+              <h1 className="font-display-lg text-[26px] md:text-[32px] text-white font-bold tracking-tight">
+                {t.introTitle}
+              </h1>
 
-                  <div className="md:hidden space-y-3">
-                    <p className="font-body-lg text-slate-100 text-[15px] leading-relaxed">
-                      {t.introP1}
-                    </p>
-                    <p className="font-body-lg text-slate-100 text-[15px] leading-relaxed">
-                      {t.introP2}
-                    </p>
-                    <p className="font-label-md text-emerald-400 tracking-widest text-[14px] leading-relaxed font-bold pt-1">
-                      {t.introP3}
-                    </p>
-                    <p className="font-label-md text-emerald-400 tracking-widest text-[14px] leading-relaxed font-bold">
-                      <span className="bg-emerald-400/20 px-2 py-0.5 rounded">{language === 'ko' ? 'AI 주역' : 'AI I-CHING'}</span>
-                    </p>
-                  </div>
+              <div className="md:hidden space-y-3">
+                <p className="font-body-lg text-slate-100 text-[15px] leading-relaxed">
+                  {t.introP1}
+                </p>
+                <p className="font-body-lg text-slate-100 text-[15px] leading-relaxed">
+                  {t.introP2}
+                </p>
+                <p className="font-label-md text-emerald-400 tracking-widest text-[14px] leading-relaxed font-bold pt-1">
+                  {t.introP3}
+                </p>
+                <p className="font-label-md text-emerald-400 tracking-widest text-[14px] leading-relaxed font-bold">
+                  <span className="bg-emerald-400/20 px-2 py-0.5 rounded">{language === 'ko' ? 'AI 주역' : 'AI I-CHING'}</span>
+                </p>
+              </div>
 
-                  <div className="hidden md:block space-y-4">
-                    <p className="font-body-lg text-slate-100 text-[18px] leading-relaxed">
-                      {t.introP1} {t.introP2}
-                    </p>
-                    <p className="font-label-md text-emerald-400 tracking-widest text-[16px] leading-relaxed font-bold">
-                      <span className="">{t.introP3}</span>{" "}
-                      <span className="bg-emerald-400/20 px-2 py-1 rounded">{language === 'ko' ? 'AI 주역' : 'AI I-CHING'}</span>
-                    </p>
-                  </div>
-                </div>
+              <div className="hidden md:block space-y-4">
+                <p className="font-body-lg text-slate-100 text-[18px] leading-relaxed">
+                  {t.introP1} {t.introP2}
+                </p>
+                <p className="font-label-md text-emerald-400 tracking-widest text-[16px] leading-relaxed font-bold">
+                  <span className="">{t.introP3}</span>{" "}
+                  <span className="bg-emerald-400/20 px-2 py-1 rounded">{language === 'ko' ? 'AI 주역' : 'AI I-CHING'}</span>
+                </p>
               </div>
             </div>
-          )}
+          </div>
+        </div>
+      )}
 
-          {/* Main Dashboard */}
-          <div
-            className={`transition-all duration-1000 ease-out flex justify-center min-h-screen bg-slate-700 overflow-y-auto ${
-              dashboardVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-            }`}
-            id="dashboard"
-          >
+      {/* Main Dashboard */}
+      <div
+        className={`transition-all duration-1000 ease-out flex justify-center min-h-screen bg-slate-700 overflow-y-auto ${
+          dashboardVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+        }`}
+        id="dashboard"
+      >
             <div className="w-full max-w-md bg-slate-700 flex flex-col min-h-screen border-x border-white/10 shadow-2xl relative">
               <header className="sticky top-0 z-50 bg-slate-700/80 backdrop-blur-md border-b border-white/20 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -1005,6 +1001,15 @@ export default function Home() {
               </header>
 
               <InfoButtons currentLang={language.toUpperCase() as "KO" | "EN"} />
+
+              <div className="px-6 pt-2">
+                <a
+                  href="/hexagrams"
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-amber-600/30 to-emerald-600/30 hover:from-amber-600/40 hover:to-emerald-600/40 border border-amber-500/30 rounded-xl text-amber-300 font-bold text-sm transition-all shadow-lg"
+                >
+                  <span>📚 {language === 'ko' ? '주역 64괘 백과사전 바로가기' : 'Explore I Ching 64 Hexagrams Encyclopedia'}</span>
+                </a>
+              </div>
 
               <main className="flex-1 px-6 py-8 space-y-10 pb-32">
                 {/* Input Section */}
@@ -1298,6 +1303,10 @@ export default function Home() {
                   </div>
 
                   <div className="flex flex-wrap gap-4">
+                    <a href="/hexagrams" className="hover:text-emerald-400 transition-colors font-bold text-amber-400">
+                      {language === "ko" ? "📚 주역 64괘 백과사전" : "📚 64 Hexagrams Encyclopedia"}
+                    </a>
+                    <span className="text-slate-600">|</span>
                     <a href="/privacy" className="hover:text-emerald-400 transition-colors">
                       {language === "ko" ? "개인정보처리방침" : "Privacy Policy"}
                     </a>
@@ -1307,7 +1316,7 @@ export default function Home() {
                     </a>
                     <span className="text-slate-600">|</span>
                     <a href="mailto:letsflyagain@gmail.com" className="hover:text-emerald-400 transition-colors">
-                      {language === "ko" ? "문의하기 (letsflyagain@gmail.com)" : "Contact (letsflyagain@gmail.com)"}
+                      {language === "ko" ? "문의하기" : "Contact"}
                     </a>
                   </div>
 
@@ -1318,8 +1327,6 @@ export default function Home() {
               </main>
             </div>
           </div>
-        </>
-      )}
     </div>
   );
 }
