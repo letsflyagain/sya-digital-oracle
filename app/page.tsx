@@ -7,6 +7,9 @@ import { HelpCircle, RefreshCw, X } from "lucide-react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import pdfMake from "pdfmake/build/pdfmake";
 import { TDocumentDefinitions } from "pdfmake/interfaces";
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
 import ichingData from "../data/i-ching.json";
 
 import GuideAccordion from "./components/GuideAccordion";
@@ -653,10 +656,35 @@ export default function Home() {
       };
 
       const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
-      pdfMake.createPdf(docDefinition).download(`sya-oracle-result-${timestamp}.pdf`);
+      const fileName = `sya-oracle-result-${timestamp}.pdf`;
+
+      if (!Capacitor.isNativePlatform()) {
+        pdfMake.createPdf(docDefinition).download(fileName);
+        setIsPdfLoading(false);
+      } else {
+        (pdfMake.createPdf(docDefinition) as any).getBase64(async (base64Data: string) => {
+          try {
+            const savedFile = await Filesystem.writeFile({
+              path: fileName,
+              data: base64Data,
+              directory: Directory.Cache,
+            });
+
+            await Share.share({
+              title: labels.title,
+              text: labels.title,
+              url: savedFile.uri,
+              dialogTitle: labels.title,
+            });
+          } catch (error) {
+            console.error("Mobile PDF share/save failed:", error);
+          } finally {
+            setIsPdfLoading(false);
+          }
+        });
+      }
     } catch (error) {
       console.error("PDF generation failed:", error);
-    } finally {
       setIsPdfLoading(false);
     }
   };
